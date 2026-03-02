@@ -49,64 +49,10 @@ Leave `ES_CLOUD_ID` empty to use local mode.
 
 ### 3. Set up Elasticsearch
 
-Before starting Logstash, create the enrich policy, ingest pipeline, and index template. All commands below use `curl` and reference the JSON files in `elasticsearch/`.
-
-Load your `.env` into the current shell so the `curl` commands below can read `ES_URL`, `ES_USER`, and `ES_PW`:
+Before starting Logstash, run the setup script to create the geo shapes index, enrich policy, ingest pipeline, and index template. The script reads `ES_URL`, `ES_USER`, and `ES_PW` from your `.env` file.
 
 ```bash
-set -a; source .env; set +a
-```
-
-**Step 1 — Create the geo shapes source index with mapping:**
-
-```bash
-curl -s -X PUT "${ES_URL%/}/geo.shapes-world.countries-50m?pretty" \
-  -u "$(printenv ES_USER):$(printenv ES_PW)" \
-  -H "Content-Type: application/json" \
-  -d @elasticsearch/geo-shapes-world-countries-50m-mapping.json
-```
-
-**Step 2 — Bulk-load the geo shapes data:**
-
-```bash
-curl -s -X POST "${ES_URL%/}/geo.shapes-world.countries-50m/_bulk?pretty" \
-  -u "$(printenv ES_USER):$(printenv ES_PW)" \
-  -H "Content-Type: application/x-ndjson" \
-  --data-binary @elasticsearch/geo-shapes-world-countries-50m-data.json
-```
-
-**Step 3 — Create the enrich policy:**
-
-```bash
-curl -s -X PUT "${ES_URL%/}/_enrich/policy/opensky-geo-enrich-50m?pretty" \
-  -u "$(printenv ES_USER):$(printenv ES_PW)" \
-  -H "Content-Type: application/json" \
-  -d @elasticsearch/enrich-policy.json
-```
-
-**Step 4 — Execute the enrich policy to build the enrich index:**
-
-```bash
-curl -s -X POST "${ES_URL%/}/_enrich/policy/opensky-geo-enrich-50m/_execute?pretty" \
-  -u "$(printenv ES_USER):$(printenv ES_PW)"
-```
-
-**Step 5 — Create the ingest pipeline:**
-
-```bash
-curl -s -X PUT "${ES_URL%/}/_ingest/pipeline/demo-aircraft-adsb.opensky?pretty" \
-  -u "$(printenv ES_USER):$(printenv ES_PW)" \
-  -H "Content-Type: application/json" \
-  -d @elasticsearch/ingest-pipeline.json
-```
-
-**Step 6 — Create the index template:**
-
-```bash
-curl -s -X PUT "${ES_URL%/}/_index_template/demos-aircraft-adsb?pretty" \
-  -u "$(printenv ES_USER):$(printenv ES_PW)" \
-  -H "Content-Type: application/json" \
-  -d @elasticsearch/index-template.json
+./setup.sh
 ```
 
 ### 4. Run
@@ -146,6 +92,7 @@ docker compose down
 adsb/
 ├── docker-compose.yml
 ├── .env.example
+├── setup.sh                                         # One-command Elasticsearch setup
 ├── elasticsearch/
 │   ├── index-template.json                         # Index template for the data stream
 │   ├── index-settings-and-mappings.json            # Full index settings & mappings reference
