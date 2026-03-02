@@ -17,7 +17,7 @@ The globe is split into four quadrants so each pipeline covers one quarter of th
 
 - Docker and Docker Compose
 - An OpenSky Network account (free): https://opensky-network.org/register
-- An Elasticsearch cluster (cloud or local)
+- An Elastic Cloud deployment
 
 ### 2. Configure
 
@@ -26,26 +26,22 @@ cd adsb
 cp .env.example .env
 ```
 
-Edit `.env` and fill in your credentials. Choose **one** of:
-
-**Elastic Cloud:**
+Edit `.env` and fill in your credentials:
 
 ```
+# Logstash uses these to connect to Elastic Cloud
 ES_CLOUD_ID=my-deployment:abc123...
 ES_CLOUD_AUTH=elastic:changeme
-```
 
-**Local / self-managed Elasticsearch:**
-
-```
-ES_CLOUD_ID=
-ES_CLOUD_AUTH=
-ES_HOSTS=https://localhost:9200
+# setup.sh uses these to create indices, pipelines, etc.
+ES_URL=https://my-deployment-abc123.es.us-central1.gcp.cloud.es.io/
 ES_USER=elastic
 ES_PW=changeme
-```
 
-Leave `ES_CLOUD_ID` empty to use local mode.
+# OpenSky Network API (required for flight data)
+OPENSKY_API_USER=your_opensky_username
+OPENSKY_API_PW=your_opensky_password
+```
 
 ### 3. Set up Elasticsearch
 

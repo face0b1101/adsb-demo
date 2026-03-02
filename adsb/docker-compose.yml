@@ -1,6 +1,4 @@
 ---
-version: "3.8"
-
 services:
   logstash:
     image: docker.elastic.co/logstash/logstash:${ELASTIC_STACK_VERSION}

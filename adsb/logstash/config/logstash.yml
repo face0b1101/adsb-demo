@@ -1,5 +1,3 @@
-http.host: "0.0.0.0"
-
 node.name: logstash
 
 log.level: ${LS_LOG_LEVEL}
