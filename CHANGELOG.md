@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Screenshot** of Aircraft World Overview dashboard in README
+- **Kibana saved objects** — four new objects: `ES|QL` tag, _Latest Events_ ES|QL saved search, _World Countries_ map, and `geo.shapes-world.countries-50m` data view
+- **Airports & Airspace layer group** added to Aircraft Demo map (Airspace + Airports layers matching World Overview)
 - **Airport proximity enrichment** — 893 airports from Natural Earth dataset merged with geo-shape coverage polygons (`adsb-airports-geo` index), `adsb-airport-proximity` enrich policy, and ingest pipeline integration; each ADS-B document is now enriched with airport name, IATA/ICAO codes, type, geo-point location, and Wikipedia link when within coverage range
 - **Airport activity classification** — ingest pipeline script processor tags each airport-enriched document with `airport.activity`: `at_airport` (stationary), `taxiing` (moving on ground), `arriving` (descending), `departing` (climbing), or `overflight` (level flight through airspace)
 - **AI agent** — "Aircraft ADS-B Tracking Specialist" (`adsb-agent.json`) deployed via Kibana Agent Builder; answers natural-language questions about flight data using platform search tools against the `demos-aircraft-adsb` data stream
@@ -24,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OpenSky Network attribution** — data source section with citation and terms-of-use link
 
 ### Changed
+
+- **Saved objects tagged "Demo"** — all content objects (data views, maps, searches, dashboards) now carry the _Demo_ tag for consistent filtering in Kibana
+- **Fixed missing data view references** — country boundary layers in both maps rewired from stale ID (`8ce4c5f0`) to the bundled `geo.shapes-world.countries-50m` data view (`29d4323f`); export metadata now reports zero missing references
+- **Aircraft Demo map aligned with World Overview** — default basemap set to Dark Blue only (ESA Copernicus off), old flat Airports layer replaced with Airports & Airspace group
+- **README** — added screenshot, minor wording tweaks to architecture and getting-started sections
 
 - **Airport geo data restructured** — flat `geometry`/`coverage_area`/`location` fields reorganised into a nested `geo` object (`geo.location`, `geo.airspace`, `geo.description`) across the airport mapping, enrich policy, ingest pipeline, index template, and bulk data; data file renamed from `.json` to `.ndjson`
 - **API key role descriptor** — added `monitor` cluster privilege and `feature_agentBuilder.all` Kibana application privilege for agent deployment
@@ -43,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- **Country-highlight layers** (Europe, Russia, Belarus, Ukraine) removed from Aircraft Demo map
 - `ES_CLOUD_ID`, `ES_CLOUD_AUTH`, `ES_URL`, `ES_HOSTS`, `ES_USER`, `ES_PW`, `ES_SSL_VERIFICATION`, `LS_HTTP_USER`, `LS_HTTP_PW` environment variables
 - Commented-out test `generator` block from `adsb_q1.conf`
 - `CHANGELOG.md` template content from unrelated project

@@ -6,6 +6,8 @@ Live aircraft position tracking powered by [OpenSky Network](https://opensky-net
 >
 > If you use this project, please review the [OpenSky Network terms of use](https://opensky-network.org/about/terms-of-use).
 
+![Aircraft World Overview dashboard in Kibana](screenshot.png)
+
 ## Architecture
 
 ```mermaid
@@ -23,7 +25,7 @@ flowchart LR
     KB -->|"Agent Builder"| AB
 ```
 
-Each pipeline covers one quadrant of the globe. Splitting the world into four smaller queries is intentional - a single global request requires significantly more memory and CPU than four parallel quadrant requests.
+Each pipeline covers one quadrant of the globe. Splitting the world into four smaller queries is more efficient than a single global request.
 
 | Pipeline  | Coverage                    | Bounding box                |
 | --------- | --------------------------- | --------------------------- |
@@ -36,13 +38,15 @@ All four pipelines write to the same `demos-aircraft-adsb` data stream. An inges
 
 ### AI Agent
 
-The setup script deploys an **Aircraft ADS-B Tracking Specialist** agent via the Kibana Agent Builder. The agent can answer natural-language questions about flight data — locate aircraft by callsign or ICAO24 address, query positions over geographic regions, analyse altitude and speed patterns, and aggregate flights by country or region. It uses built-in platform tools (`search`, `list_indices`, `get_index_mapping`, `get_document_by_id`) against the `demos-aircraft-adsb` data stream.
+The setup script deploys an **Aircraft ADS-B Tracking Specialist** agent via the Kibana Agent Builder. The agent can answer natural-language questions about flight data - locate aircraft by callsign or ICAO24 address, query positions over geographic regions, analyse altitude and speed patterns, and aggregate flights by country or region.
 
 Once deployed, the agent is available in Kibana under **AI Agents** (or via the `POST /api/agent_builder/converse` API).
 
+Make sure you have an [LLM configured in Kibana](https://www.elastic.co/docs/explore-analyze/ai-features/llm-guides/llm-connectors), select the agent and throw some natural language querying its way.
+
 ## Getting Started with Elasticsearch
 
-You need a running Elasticsearch and Kibana instance to receive the data. Two options:
+You need a running Elasticsearch cluster and Kibana instance to receive the data. The two simplest options are:
 
 - **Elastic Cloud** ([elastic.co/cloud](https://elastic.co/cloud)) - managed Elasticsearch and Kibana (Hosted or Serverless). Your Elasticsearch and Kibana endpoint URLs are shown on the deployment overview page.
 - **Start Local** ([elastic/start-local](https://github.com/elastic/start-local)) - run `curl -fsSL https://elastic.co/start-local | sh` to spin up Elasticsearch and Kibana locally via Docker. Your endpoints are shown at the end of the install and saved in `elastic-start-local/.env`.
@@ -51,7 +55,7 @@ Both approaches give you an **Elasticsearch endpoint URL** and a **Kibana endpoi
 
 ## Generate an API Key
 
-Open Kibana **Dev Tools** (or use curl) and run:
+Open Kibana, head to **Dev Tools** (_hint_: it's in the bottom left), copy and run the following:
 
 ```json
 POST /_security/api_key
