@@ -38,6 +38,9 @@ ES_URL=https://my-deployment-abc123.es.us-central1.gcp.cloud.es.io/
 ES_USER=elastic
 ES_PW=changeme
 
+# Kibana endpoint for saved objects import
+KB_URL=https://my-deployment-abc123.kb.us-central1.gcp.cloud.es.io/
+
 # OpenSky Network API (required for flight data)
 OPENSKY_API_USER=your_opensky_username
 OPENSKY_API_PW=your_opensky_password
@@ -45,7 +48,7 @@ OPENSKY_API_PW=your_opensky_password
 
 ### 3. Set up Elasticsearch
 
-Before starting Logstash, run the setup script to create the geo shapes index, enrich policy, ingest pipeline, and index template. The script reads `ES_URL`, `ES_USER`, and `ES_PW` from your `.env` file.
+Before starting Logstash, run the setup script to create the geo shapes index, enrich policy, ingest pipeline, index template, and import Kibana saved objects (dashboards, data views). The script reads `ES_URL`, `ES_USER`, `ES_PW`, and `KB_URL` from your `.env` file.
 
 ```bash
 ./setup.sh
@@ -84,7 +87,7 @@ docker compose down
 
 ## Project Structure
 
-```
+```sh
 adsb/
 ├── docker-compose.yml
 ├── .env.example
@@ -95,7 +98,8 @@ adsb/
 │   ├── ingest-pipeline.json                        # Ingest pipeline (enrich + trim)
 │   ├── enrich-policy.json                          # Enrich policy definition
 │   ├── geo-shapes-world-countries-50m-mapping.json # Source index mapping for enrich data
-│   └── geo-shapes-world-countries-50m-data.json    # Country boundary geo shapes (bulk data)
+│   ├── geo-shapes-world-countries-50m-data.json    # Country boundary geo shapes (bulk data)
+│   └── adsb-saved-objects.ndjson                   # Kibana saved objects (dashboards, data views)
 └── logstash/
     ├── config/
     │   ├── logstash.yml        # Logstash node settings

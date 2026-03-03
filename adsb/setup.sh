@@ -12,17 +12,18 @@ else
   exit 1
 fi
 
-for var in ES_URL ES_USER ES_PW; do
+for var in ES_URL ES_USER ES_PW KB_URL; do
   if [[ -z "${!var:-}" ]]; then
     echo "ERROR: $var is not set. Check your .env file." >&2
     exit 1
   fi
 done
 
-TOTAL=6
+TOTAL=7
 STEP=0
 AUTH="${ES_USER}:${ES_PW}"
 BASE="${ES_URL%/}"
+KB_BASE="${KB_URL%/}"
 
 run_curl() {
   local label="$1"; shift
@@ -72,6 +73,11 @@ run_curl "Creating index template" \
   -X PUT "$BASE/_index_template/demos-aircraft-adsb" \
   -H "Content-Type: application/json" \
   -d @elasticsearch/index-template.json
+
+run_curl "Importing Kibana saved objects (dashboards, data views)" \
+  -X POST "$KB_BASE/api/saved_objects/_import?overwrite=true" \
+  -H "kbn-xsrf: true" \
+  -F "file=@elasticsearch/adsb-saved-objects.ndjson"
 
 echo ""
 echo "Elasticsearch setup complete."
