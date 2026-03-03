@@ -44,12 +44,12 @@ Both approaches give you an **Elasticsearch endpoint URL** and a **Kibana endpoi
 
 Open Kibana **Dev Tools** (or use curl) and run:
 
-```dev-tools
+```json
 POST /_security/api_key
 {
   "name": "adsb-demo",
   "role_descriptors": {
-    "setup_and_ingest": {
+    "adsb_setup": {
       "cluster": [
         "manage_enrich",
         "manage_ingest_pipelines",
@@ -59,13 +59,10 @@ POST /_security/api_key
         {
           "names": [
             "geo.shapes-world.countries-50m",
-            "adsb-airports-geo"
+            "adsb-airports-geo",
+            "demos-aircraft-adsb*"
           ],
-          "privileges": ["create_index", "index", "write"]
-        },
-        {
-          "names": ["demos-aircraft-adsb*"],
-          "privileges": ["auto_configure", "create_doc", "create_index"]
+          "privileges": ["create_index", "write", "read", "view_index_metadata", "manage"]
         }
       ],
       "applications": [
@@ -82,13 +79,13 @@ POST /_security/api_key
 
 From the response, copy the three values into your `.env` file:
 
-```sh
+```secrets
 ES_API_KEY_ID=VuaCfGcBCdbkQm-e5aOx
 ES_API_KEY=ui2lp2axTNmsyakw9tvNnw
 ES_API_KEY_ENCODED=VnVhQ2ZHY0JDZGJrUW0tZTVhT3g6dWkybHAyYXhUTm1zeWFrdzl0dk5udw==
 ```
 
-`setup.sh` uses the base64-encoded key for REST calls; Logstash uses the `id:secret` pair directly.
+`setup.sh` uses the base64-encoded key for REST calls; Logstash uses the `id:key` pair directly.
 
 ## Quick Start
 
