@@ -1,0 +1,6 @@
+.env
+.DS_Store
+*.log
+.cursor/
+logstash/files/*
+!logstash/files/.gitkeep

@@ -18,19 +18,11 @@ services:
       LS_MONITORING_CLUSTER_UUID: ${LS_MONITORING_CLUSTER_UUID}
       LS_API_USER: ${LS_API_USER}
       LS_API_PW: ${LS_API_PW}
-      LS_HTTP_USER: ${LS_HTTP_USER}
-      LS_HTTP_PW: ${LS_HTTP_PW}
-      ES_CLOUD_ID: ${ES_CLOUD_ID}
-      ES_CLOUD_AUTH: ${ES_CLOUD_AUTH}
-      ES_HOSTS: ${ES_HOSTS}
-      ES_USER: ${ES_USER}
-      ES_PW: ${ES_PW}
-      ES_SSL_VERIFICATION: ${ES_SSL_VERIFICATION}
+      ES_ENDPOINT: ${ES_ENDPOINT}
+      ES_API_KEY: ${ES_API_KEY}
       OPENSKY_API_USER: ${OPENSKY_API_USER}
       OPENSKY_API_PW: ${OPENSKY_API_PW}
 
 
 volumes:
   logstash_data:
-    name: logstash_data
-    external: true
