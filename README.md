@@ -14,10 +14,13 @@ flowchart LR
     LS["Logstash"]
     ES["Elasticsearch"]
     KB["Kibana"]
+    AB["AI Agent"]
 
     OSN -->|"HTTP poll every 6 min"| LS
     LS -->|"enrich + index"| ES
     ES -->|"visualise"| KB
+    AB -->|"query"| ES
+    KB -->|"Agent Builder"| AB
 ```
 
 Each pipeline covers one quadrant of the globe. Splitting the world into four smaller queries is intentional - a single global request requires significantly more memory and CPU than four parallel quadrant requests.
@@ -30,6 +33,12 @@ Each pipeline covers one quadrant of the globe. Splitting the world into four sm
 | `adsb-q4` | South-East (Africa/Oceania) | lat -90 to 0, lon 0 to 180  |
 
 All four pipelines write to the same `demos-aircraft-adsb` data stream. An ingest pipeline enriches each document with country/region metadata and nearest airport proximity via geo-shape enrich policies.
+
+### AI Agent
+
+The setup script deploys an **Aircraft ADS-B Tracking Specialist** agent via the Kibana Agent Builder. The agent can answer natural-language questions about flight data — locate aircraft by callsign or ICAO24 address, query positions over geographic regions, analyse altitude and speed patterns, and aggregate flights by country or region. It uses built-in platform tools (`search`, `list_indices`, `get_index_mapping`, `get_document_by_id`) against the `demos-aircraft-adsb` data stream.
+
+Once deployed, the agent is available in Kibana under **AI Agents** (or via the `POST /api/agent_builder/converse` API).
 
 ## Getting Started with Elasticsearch
 
@@ -51,6 +60,7 @@ POST /_security/api_key
   "role_descriptors": {
     "adsb_setup": {
       "cluster": [
+        "monitor",
         "manage_enrich",
         "manage_ingest_pipelines",
         "manage_index_templates"
@@ -68,7 +78,10 @@ POST /_security/api_key
       "applications": [
         {
           "application": "kibana-.kibana",
-          "privileges": ["feature_savedObjectsManagement.all"],
+          "privileges": [
+            "feature_savedObjectsManagement.all",
+            "feature_agentBuilder.all"
+          ],
           "resources": ["*"]
         }
       ]
@@ -116,7 +129,7 @@ OPENSKY_API_PW=your_opensky_password
 
 ### 3. Set up Elasticsearch
 
-Run the setup script to create the geo-shapes and airports indices, enrich policies, ingest pipeline, index template, and import Kibana saved objects (dashboards, data views). The script reads `ES_ENDPOINT`, `ES_API_KEY_ENCODED`, and `KB_ENDPOINT` from your `.env` file.
+Run the setup script to create the geo-shapes and airports indices, enrich policies, ingest pipeline, index template, import Kibana saved objects (dashboards, data views), and deploy the AI agent. The script reads `ES_ENDPOINT`, `ES_API_KEY_ENCODED`, and `KB_ENDPOINT` from your `.env` file.
 
 ```bash
 ./setup.sh
@@ -167,8 +180,9 @@ docker compose down
 │   ├── geo-shapes-world-countries-50m-data.json      # Country boundary geo-shapes (bulk data)
 │   ├── adsb-airport-enrich-policy.json               # Airport proximity enrich policy
 │   ├── adsb-airports-geo-mapping.json                # Source index mapping for airports (Natural Earth + coverage)
-│   ├── adsb-airports-geo-data.json                   # 893 airports with multilingual names, ICAO codes, and coverage polygons
-│   └── adsb-saved-objects.ndjson                     # Kibana saved objects (dashboards, data views)
+│   ├── adsb-airports-geo-data.ndjson                  # 893 airports with multilingual names, ICAO codes, and coverage polygons
+│   ├── adsb-saved-objects.ndjson                     # Kibana saved objects (dashboards, data views)
+│   └── adsb-agent.json                               # AI agent definition (Aircraft ADS-B Tracking Specialist)
 └── logstash/
     ├── config/
     │   ├── logstash.yml                              # Logstash node settings

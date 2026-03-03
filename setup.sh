@@ -19,7 +19,7 @@ for var in ES_ENDPOINT ES_API_KEY_ENCODED KB_ENDPOINT; do
   fi
 done
 
-TOTAL=11
+TOTAL=14
 STEP=0
 BASE="${ES_ENDPOINT%/}"
 KB_BASE="${KB_ENDPOINT%/}"
@@ -56,6 +56,9 @@ run_curl "Bulk-loading geo shapes data" \
   -H "Content-Type: application/x-ndjson" \
   --data-binary @elasticsearch/geo-shapes-world-countries-50m-data.json
 
+run_curl "Refreshing geo shapes index" \
+  -X POST "$BASE/geo.shapes-world.countries-50m/_refresh"
+
 run_curl "Creating enrich policy" \
   -X PUT "$BASE/_enrich/policy/opensky-geo-enrich-50m" \
   -H "Content-Type: application/json" \
@@ -72,7 +75,10 @@ run_curl "Creating airports source index" \
 run_curl "Bulk-loading airports data" \
   -X POST "$BASE/adsb-airports-geo/_bulk" \
   -H "Content-Type: application/x-ndjson" \
-  --data-binary @elasticsearch/adsb-airports-geo-data.json
+  --data-binary @elasticsearch/adsb-airports-geo-data.ndjson
+
+run_curl "Refreshing airports index" \
+  -X POST "$BASE/adsb-airports-geo/_refresh"
 
 run_curl "Creating airport proximity enrich policy" \
   -X PUT "$BASE/_enrich/policy/adsb-airport-proximity" \
@@ -92,10 +98,51 @@ run_curl "Creating index template" \
   -H "Content-Type: application/json" \
   -d @elasticsearch/index-template.json
 
-run_curl "Importing Kibana saved objects (dashboards, data views)" \
+STEP=$((STEP + 1))
+echo "[$STEP/$TOTAL] Importing Kibana saved objects (dashboards, data views) ..."
+
+import_tmp=$(mktemp)
+import_http=$(curl -s -w '%{http_code}' -o "$import_tmp" \
+  -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
   -X POST "$KB_BASE/api/saved_objects/_import?overwrite=true" \
   -H "kbn-xsrf: true" \
-  -F "file=@elasticsearch/adsb-saved-objects.ndjson"
+  -F "file=@elasticsearch/adsb-saved-objects.ndjson")
+
+if [[ "$import_http" -lt 200 || "$import_http" -ge 300 ]]; then
+  echo "  FAILED (HTTP $import_http):" >&2
+  cat "$import_tmp" >&2
+  rm -f "$import_tmp"
+  exit 1
+fi
+
+import_success=$(python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('success',True))" < "$import_tmp" || echo "True")
+if [[ "$import_success" == "False" ]]; then
+  echo "  PARTIAL FAILURE (HTTP $import_http):" >&2
+  python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+ok=d.get('successCount',0)
+errs=d.get('errors',[])
+print(f'  {ok} objects imported, {len(errs)} failed:')
+for e in errs:
+    title=e.get('meta',{}).get('title','?')
+    etype=e.get('error',{}).get('type','?')
+    refs=e.get('error',{}).get('references',[])
+    ref_ids=', '.join(r.get('id','?') for r in refs)
+    print(f'    - {e[\"type\"]} \"{title}\": {etype} (refs: {ref_ids})')
+" < "$import_tmp" >&2
+  rm -f "$import_tmp"
+  exit 1
+fi
+
+echo "  OK (HTTP $import_http) — $(python3 -c "import json,sys; print(json.load(sys.stdin).get('successCount','?'))" < "$import_tmp" || echo "?") objects imported"
+rm -f "$import_tmp"
+
+run_curl "Deploying ADS-B tracking agent" \
+  -X PUT "$KB_BASE/api/agent_builder/agents/adsb_agent" \
+  -H "kbn-xsrf: true" \
+  -H "Content-Type: application/json" \
+  -d @elasticsearch/adsb-agent.json
 
 echo ""
 echo "Elasticsearch setup complete."

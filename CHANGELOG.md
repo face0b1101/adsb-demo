@@ -9,17 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Airport proximity enrichment** — 893 airports from Natural Earth dataset merged with geo-shape coverage polygons (`adsb-airports-geo` index), `adsb-airport-proximity` enrich policy, and ingest pipeline integration; each ADS-B document is now enriched with airport name, IATA/ICAO codes, type, geometry, and Wikipedia link when within coverage range
+- **Airport proximity enrichment** — 893 airports from Natural Earth dataset merged with geo-shape coverage polygons (`adsb-airports-geo` index), `adsb-airport-proximity` enrich policy, and ingest pipeline integration; each ADS-B document is now enriched with airport name, IATA/ICAO codes, type, geo-point location, and Wikipedia link when within coverage range
 - **Airport activity classification** — ingest pipeline script processor tags each airport-enriched document with `airport.activity`: `at_airport` (stationary), `taxiing` (moving on ground), `arriving` (descending), `departing` (climbing), or `overflight` (level flight through airspace)
+- **AI agent** — "Aircraft ADS-B Tracking Specialist" (`adsb-agent.json`) deployed via Kibana Agent Builder; answers natural-language questions about flight data using platform search tools against the `demos-aircraft-adsb` data stream
+- **Ingest pipeline type conversions** — `convert` processors cast `on_ground` to boolean, `velocity` and `vertical_rate` to float before the activity-classification script runs
+- **Index refresh steps** — `setup.sh` now explicitly refreshes the geo-shapes and airports indices after bulk loading, before creating enrich policies
+- **Kibana import error handling** — saved-objects import in `setup.sh` now checks HTTP status and parses the response for partial failures, reporting individual object errors
+- **Log4j2 configuration** — `logstash/config/log4j2.properties` with console and rolling-file appenders (25 MB rotation, 3 archives)
 - **Makefile** with targets for common operations (`setup`, `up`, `down`, `logs`, `restart`, `status`, `clean`, `help`)
 - **Apache 2.0 licence** (`LICENSE`)
 - **API key generation instructions** in README with scoped role descriptor for least-privilege access
 - **Getting Started with Elasticsearch** section covering Elastic Cloud (Hosted/Serverless) and start-local
-- **Architecture diagram** (Mermaid) and pipeline architecture explanation in README
+- **Architecture diagram** (Mermaid) with AI Agent node and pipeline architecture explanation in README
 - **OpenSky Network attribution** — data source section with citation and terms-of-use link
 
 ### Changed
 
+- **Airport geo data restructured** — flat `geometry`/`coverage_area`/`location` fields reorganised into a nested `geo` object (`geo.location`, `geo.airspace`, `geo.description`) across the airport mapping, enrich policy, ingest pipeline, index template, and bulk data; data file renamed from `.json` to `.ndjson`
+- **API key role descriptor** — added `monitor` cluster privilege and `feature_agentBuilder.all` Kibana application privilege for agent deployment
+- **Docker Compose** — mounts `log4j2.properties` into the Logstash container
 - **API key split** — replaced single `ES_API_KEY` with three variables (`ES_API_KEY_ID`, `ES_API_KEY`, `ES_API_KEY_ENCODED`) copied directly from the Create API Key response; eliminates user-side base64 encoding and improves setup UX
 - **Scoped API key** — README now documents a least-privilege role descriptor (`adsb_setup`) instead of a superuser key; consolidated index privileges into a single block covering all required indices
 - **Auth migration** — replaced Cloud ID / basic auth with `ES_ENDPOINT` + API key across all configs (Logstash pipelines, docker-compose, setup.sh, .env.example)
@@ -39,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commented-out test `generator` block from `adsb_q1.conf`
 - `CHANGELOG.md` template content from unrelated project
 - `.pre-commit-config.yaml` with Python/Ruff hooks (not applicable)
+- Flat `geometry`, `coverage_area`, and `location` fields from airport source index (replaced by nested `geo` object)
 
 ## [0.2.0] - 2026-03-03
 

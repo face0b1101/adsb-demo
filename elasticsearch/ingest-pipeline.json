@@ -19,6 +19,27 @@
       }
     },
     {
+      "convert": {
+        "field": "on_ground",
+        "type": "boolean",
+        "ignore_missing": true
+      }
+    },
+    {
+      "convert": {
+        "field": "velocity",
+        "type": "float",
+        "ignore_missing": true
+      }
+    },
+    {
+      "convert": {
+        "field": "vertical_rate",
+        "type": "float",
+        "ignore_missing": true
+      }
+    },
+    {
       "script": {
         "if": "ctx.airport != null",
         "lang": "painless",
@@ -29,7 +50,7 @@
       "remove": {
         "ignore_failure": true,
         "ignore_missing": true,
-        "field": ["geo.geometry", "airport.coverage_area", "data_stream"]
+        "field": ["geo.geometry", "airport.geo.airspace", "data_stream"]
       }
     },
     {

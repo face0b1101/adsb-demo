@@ -3,12 +3,16 @@
     "properties": {
       "abbrev":       { "type": "keyword" },
       "comments":     { "type": "keyword" },
-      "coverage_area": { "type": "geo_shape" },
       "featurecla":   { "type": "keyword" },
-      "geometry":     { "type": "geo_point" },
+      "geo": {
+        "properties": {
+          "airspace":    { "type": "geo_shape" },
+          "location":    { "type": "geo_point" },
+          "description": { "type": "keyword" }
+        }
+      },
       "gps_code":     { "type": "keyword" },
       "iata_code":    { "type": "keyword" },
-      "location":     { "type": "keyword" },
       "name":         { "type": "keyword" },
       "name_ar":      { "type": "keyword" },
       "name_bn":      { "type": "keyword" },

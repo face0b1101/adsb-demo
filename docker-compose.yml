@@ -8,6 +8,7 @@ services:
     volumes:
       - ${DOCKER_HOME}/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ${DOCKER_HOME}/logstash/config/pipelines.yml:/usr/share/logstash/config/pipelines.yml
+      - ${DOCKER_HOME}/logstash/config/log4j2.properties:/usr/share/logstash/config/log4j2.properties
       - ${DOCKER_HOME}/logstash/pipeline:/usr/share/logstash/pipeline
       - ${DOCKER_HOME}/logstash/files:/usr/share/logstash/files
       - logstash_data:/usr/share/logstash/data

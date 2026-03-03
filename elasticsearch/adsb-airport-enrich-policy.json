@@ -1,14 +1,14 @@
 {
   "geo_match": {
     "indices": ["adsb-airports-geo"],
-    "match_field": "coverage_area",
+    "match_field": "geo.airspace",
     "enrich_fields": [
       "name",
       "name_en",
       "iata_code",
       "gps_code",
       "type",
-      "geometry",
+      "geo.location",
       "wikipedia"
     ]
   }

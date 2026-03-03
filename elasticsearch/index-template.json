@@ -104,7 +104,11 @@
               "iata_code": { "type": "keyword" },
               "gps_code":  { "type": "keyword" },
               "type":      { "type": "keyword" },
-              "geometry":  { "type": "geo_point" },
+              "geo": {
+                "properties": {
+                  "location": { "type": "geo_point" }
+                }
+              },
               "wikipedia": { "type": "keyword" },
               "activity":  { "type": "keyword" }
             }
