@@ -1,5 +1,4 @@
 {
-  "id": "adsb_agent",
   "name": "Aircraft ADS-B Tracking Specialist",
   "description": "Real-time aircraft tracking agent that queries live ADS-B (Automatic Dependent Surveillance-Broadcast) data to help you locate, monitor, and analyze aircraft movements globally. Ask questions about specific flights, aircraft positions over geographic regions, altitude ranges, speed, and flight patterns. Perfect for aviation tracking, route analysis, and real-time flight monitoring across the March 2025 to present timeframe.",
   "labels": ["adsb", "aircraft", "Demo"],

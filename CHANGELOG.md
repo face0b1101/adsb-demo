@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture diagram** (Mermaid) with AI Agent node and pipeline architecture explanation in README
 - **OpenSky Network attribution** — data source section with citation and terms-of-use link
 
+### Fixed
+
+- **Agent Builder deployment** — removed `id` from `adsb-agent.json` request body (rejected by the PUT endpoint) and made `setup.sh` step 14 idempotent with a PUT-then-POST fallback so the agent is created on first run and updated on re-runs
+
 ### Changed
 
 - **Saved objects tagged "Demo"** — all content objects (data views, maps, searches, dashboards) now carry the _Demo_ tag for consistent filtering in Kibana

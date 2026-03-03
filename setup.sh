@@ -138,11 +138,35 @@ fi
 echo "  OK (HTTP $import_http) — $(python3 -c "import json,sys; print(json.load(sys.stdin).get('successCount','?'))" < "$import_tmp" || echo "?") objects imported"
 rm -f "$import_tmp"
 
-run_curl "Deploying ADS-B tracking agent" \
+STEP=$((STEP + 1))
+echo "[$STEP/$TOTAL] Deploying ADS-B tracking agent ..."
+
+agent_tmp=$(mktemp)
+agent_http=$(curl -s -w '%{http_code}' -o "$agent_tmp" \
+  -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
   -X PUT "$KB_BASE/api/agent_builder/agents/adsb_agent" \
   -H "kbn-xsrf: true" \
   -H "Content-Type: application/json" \
-  -d @elasticsearch/adsb-agent.json
+  -d @elasticsearch/adsb-agent.json)
+
+if [[ "$agent_http" == "404" ]]; then
+  agent_http=$(curl -s -w '%{http_code}' -o "$agent_tmp" \
+    -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+    -X POST "$KB_BASE/api/agent_builder/agents" \
+    -H "kbn-xsrf: true" \
+    -H "Content-Type: application/json" \
+    -d "$(python3 -c "import json,sys; d=json.load(open('elasticsearch/adsb-agent.json')); d['id']='adsb_agent'; json.dump(d,sys.stdout)")")
+fi
+
+if [[ "$agent_http" -lt 200 || "$agent_http" -ge 300 ]]; then
+  echo "  FAILED (HTTP $agent_http):" >&2
+  cat "$agent_tmp" >&2
+  rm -f "$agent_tmp"
+  exit 1
+fi
+
+echo "  OK (HTTP $agent_http)"
+rm -f "$agent_tmp"
 
 echo ""
 echo "Elasticsearch setup complete."
