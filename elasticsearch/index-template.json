@@ -96,6 +96,18 @@
           },
           "longitude": {
             "type": "float"
+          },
+          "airport": {
+            "properties": {
+              "name":      { "type": "keyword" },
+              "name_en":   { "type": "keyword" },
+              "iata_code": { "type": "keyword" },
+              "gps_code":  { "type": "keyword" },
+              "type":      { "type": "keyword" },
+              "geometry":  { "type": "geo_point" },
+              "wikipedia": { "type": "keyword" },
+              "activity":  { "type": "keyword" }
+            }
           }
         }
       },

@@ -29,7 +29,7 @@ Each pipeline covers one quadrant of the globe. Splitting the world into four sm
 | `adsb-q3` | South-West (Americas/South) | lat -90 to 0, lon -180 to 0 |
 | `adsb-q4` | South-East (Africa/Oceania) | lat -90 to 0, lon 0 to 180  |
 
-All four pipelines write to the same `demos-aircraft-adsb` data stream. An ingest pipeline enriches each document with country and region metadata via a geo-shape enrich policy.
+All four pipelines write to the same `demos-aircraft-adsb` data stream. An ingest pipeline enriches each document with country/region metadata and nearest airport proximity via geo-shape enrich policies.
 
 ## Getting Started with Elasticsearch
 
@@ -44,7 +44,7 @@ Both approaches give you an **Elasticsearch endpoint URL** and a **Kibana endpoi
 
 Open Kibana **Dev Tools** (or use curl) and run:
 
-```
+```dev-tools
 POST /_security/api_key
 {
   "name": "adsb-demo"
@@ -77,7 +77,7 @@ cp .env.example .env
 
 Edit `.env` and fill in your credentials:
 
-```
+```sh
 ES_ENDPOINT=https://my-deployment.es.us-central1.gcp.cloud.es.io
 ES_API_KEY=VuaCfGcBCdbkQm-e5aOx:ui2lp2axTNmsyakw9tvNnw
 KB_ENDPOINT=https://my-deployment.kb.us-central1.gcp.cloud.es.io
@@ -88,7 +88,7 @@ OPENSKY_API_PW=your_opensky_password
 
 ### 3. Set up Elasticsearch
 
-Run the setup script to create the geo-shapes index, enrich policy, ingest pipeline, index template, and import Kibana saved objects (dashboards, data views). The script reads `ES_ENDPOINT`, `ES_API_KEY`, and `KB_ENDPOINT` from your `.env` file.
+Run the setup script to create the geo-shapes and airports indices, enrich policies, ingest pipeline, index template, and import Kibana saved objects (dashboards, data views). The script reads `ES_ENDPOINT`, `ES_API_KEY`, and `KB_ENDPOINT` from your `.env` file.
 
 ```bash
 ./setup.sh
@@ -134,20 +134,22 @@ docker compose down
 ├── elasticsearch/
 │   ├── index-template.json                           # Index template for the data stream
 │   ├── ingest-pipeline.json                          # Ingest pipeline (enrich + trim)
-│   ├── enrich-policy.json                            # Enrich policy definition
-│   ├── geo-shapes-world-countries-50m-mapping.json   # Source index mapping for enrich data
+│   ├── enrich-policy.json                            # Country geo-shape enrich policy
+│   ├── geo-shapes-world-countries-50m-mapping.json   # Source index mapping for country boundaries
 │   ├── geo-shapes-world-countries-50m-data.json      # Country boundary geo-shapes (bulk data)
+│   ├── adsb-airport-enrich-policy.json               # Airport proximity enrich policy
+│   ├── adsb-airports-geo-mapping.json                # Source index mapping for airports (Natural Earth + coverage)
+│   ├── adsb-airports-geo-data.json                   # 893 airports with multilingual names, ICAO codes, and coverage polygons
 │   └── adsb-saved-objects.ndjson                     # Kibana saved objects (dashboards, data views)
 └── logstash/
     ├── config/
     │   ├── logstash.yml                              # Logstash node settings
     │   └── pipelines.yml                             # Registers all 4 quadrant pipelines
-    ├── pipeline/
-    │   ├── adsb_q1.conf                              # Q1 — North-West
-    │   ├── adsb_q2.conf                              # Q2 — North-East
-    │   ├── adsb_q3.conf                              # Q3 — South-West
-    │   └── adsb_q4.conf                              # Q4 — South-East
-    └── files/                                        # Supplemental files (lookups, etc.)
+    └── pipeline/
+        ├── adsb_q1.conf                              # Q1 — North-West
+        ├── adsb_q2.conf                              # Q2 — North-East
+        ├── adsb_q3.conf                              # Q3 — South-West
+        └── adsb_q4.conf                              # Q4 — South-East
 ```
 
 ## Optional: Centralised Pipeline Management
@@ -167,7 +169,7 @@ xpack.management.elasticsearch.pipeline.poll_interval: 5s
 ### 2. Create pipelines in Kibana
 
 1. Go to **Management > Ingest > Logstash Pipelines**.
-2. Create a pipeline for each ID (`adsb-q1` through `adsb-q4`) and paste the corresponding config.
+2. Create a pipeline for each ID (`adsb-q1` through `adsb-q4`) and paste the corresponding config from the pipeline files in `logstash/pipeline/`.
 
 Once CPM is enabled, Logstash ignores local `.conf` files for managed pipeline IDs. You can run some pipelines locally and others centrally as long as their IDs don't overlap.
 
@@ -178,6 +180,8 @@ docker compose restart logstash
 ```
 
 ## Changing Log Level at Runtime
+
+The Logstash node API (port 9600) is protected by the `LS_API_USER` / `LS_API_PW` credentials you set in `.env` (defaults: `logstash` / `changeme`).
 
 ```bash
 curl -XPUT -u "${LS_API_USER}:${LS_API_PW}" \

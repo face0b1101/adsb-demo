@@ -10,10 +10,26 @@
       }
     },
     {
+      "enrich": {
+        "ignore_failure": true,
+        "policy_name": "adsb-airport-proximity",
+        "ignore_missing": true,
+        "field": "location",
+        "target_field": "airport"
+      }
+    },
+    {
+      "script": {
+        "if": "ctx.airport != null",
+        "lang": "painless",
+        "source": "if (ctx.on_ground == true) { if (ctx.velocity != null && ctx.velocity == 0) { ctx.airport.activity = 'at_airport'; } else { ctx.airport.activity = 'taxiing'; } } else if (ctx.vertical_rate != null && ctx.vertical_rate < -2.0) { ctx.airport.activity = 'arriving'; } else if (ctx.vertical_rate != null && ctx.vertical_rate > 2.0) { ctx.airport.activity = 'departing'; } else { ctx.airport.activity = 'overflight'; }"
+      }
+    },
+    {
       "remove": {
         "ignore_failure": true,
         "ignore_missing": true,
-        "field": ["geo.geometry", "data_stream"]
+        "field": ["geo.geometry", "airport.coverage_area", "data_stream"]
       }
     },
     {

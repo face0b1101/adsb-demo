@@ -19,7 +19,7 @@ for var in ES_ENDPOINT ES_API_KEY KB_ENDPOINT; do
   fi
 done
 
-TOTAL=7
+TOTAL=11
 STEP=0
 BASE="${ES_ENDPOINT%/}"
 KB_BASE="${KB_ENDPOINT%/}"
@@ -64,6 +64,24 @@ run_curl "Creating enrich policy" \
 
 run_curl "Executing enrich policy" \
   -X POST "$BASE/_enrich/policy/opensky-geo-enrich-50m/_execute"
+
+run_curl "Creating airports source index" \
+  -X PUT "$BASE/adsb-airports-geo" \
+  -H "Content-Type: application/json" \
+  -d @elasticsearch/adsb-airports-geo-mapping.json
+
+run_curl "Bulk-loading airports data" \
+  -X POST "$BASE/adsb-airports-geo/_bulk" \
+  -H "Content-Type: application/x-ndjson" \
+  --data-binary @elasticsearch/adsb-airports-geo-data.json
+
+run_curl "Creating airport proximity enrich policy" \
+  -X PUT "$BASE/_enrich/policy/adsb-airport-proximity" \
+  -H "Content-Type: application/json" \
+  -d @elasticsearch/adsb-airport-enrich-policy.json
+
+run_curl "Executing airport proximity enrich policy" \
+  -X POST "$BASE/_enrich/policy/adsb-airport-proximity/_execute"
 
 run_curl "Creating ingest pipeline" \
   -X PUT "$BASE/_ingest/pipeline/demo-aircraft-adsb.opensky" \
