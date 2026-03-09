@@ -1,0 +1,95 @@
+name: Squawk 7500 Create Case
+description: >-
+  Creates or updates a Kibana case for a squawk 7500 investigation.
+  Deduplicates by searching for an existing open case tagged with the
+  aircraft's icao24. If one exists, adds a comment; otherwise creates a
+  new case with the assessment details. Designed as a workflow tool for
+  the hijack assessment agent.
+enabled: true
+tags: ["adsb", "squawk-7500", "cases"]
+
+inputs:
+  - name: icao24
+    type: string
+    required: true
+    description: "ICAO 24-bit aircraft address (hex)"
+  - name: callsign
+    type: string
+    required: false
+    default: ""
+    description: "Flight callsign"
+  - name: verdict
+    type: string
+    required: true
+    description: "Assessment verdict: genuine or false_positive"
+  - name: confidence
+    type: string
+    required: true
+    description: "Confidence score (0–1)"
+  - name: reasoning
+    type: string
+    required: true
+    description: "Full assessment reasoning text"
+
+triggers:
+  - type: manual
+
+steps:
+  # ------------------------------------------------------------------
+  # 1. Deduplicate — search for an existing open case
+  # ------------------------------------------------------------------
+  - name: find_existing_case
+    type: kibana.request
+    with:
+      method: GET
+      path: "/api/cases/_find?tags=icao24:{{ inputs.icao24 }}&tags=squawk-7500&status=open&perPage=1"
+
+  # ------------------------------------------------------------------
+  # 2. Create new case or add comment to existing
+  # ------------------------------------------------------------------
+  - name: handle_case
+    type: if
+    condition: "{{ steps.find_existing_case.output.total > 0 }}"
+    steps:
+      - name: add_case_comment
+        type: kibana.request
+        with:
+          method: POST
+          path: "/api/cases/{{ steps.find_existing_case.output.cases.0.id }}/comments"
+          body:
+            type: user
+            comment: |
+              ### Hijack Assessment — {{ inputs.verdict | upcase }}
+
+              **Confidence:** {{ inputs.confidence }}
+
+              {{ inputs.reasoning }}
+    else:
+      - name: create_case
+        type: kibana.createCase
+        with:
+          owner: securitySolution
+          connector:
+            id: "none"
+            name: "none"
+            type: ".none"
+            fields: null
+          settings:
+            syncAlerts: true
+          title: >-
+            Squawk 7500 (Hijack) —
+            {{ inputs.callsign }}
+            ({{ inputs.icao24 }})
+          description: |
+            ### Hijack Assessment — {{ inputs.verdict | upcase }}
+
+            **Aircraft:** {{ inputs.icao24 }}
+            **Callsign:** {{ inputs.callsign }}
+            **Confidence:** {{ inputs.confidence }}
+
+            {{ inputs.reasoning }}
+          tags:
+            - "squawk-7500"
+            - "icao24:{{ inputs.icao24 }}"
+            - "callsign:{{ inputs.callsign }}"
+            - "verdict:{{ inputs.verdict }}"

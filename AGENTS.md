@@ -12,17 +12,32 @@ ______________________________________________________________________
 - **Visualisation**: Kibana (dashboards, data views)
 - **Setup automation**: Bash (`setup.sh`)
 
-| Command                | Purpose                                                                  |
-| ---------------------- | ------------------------------------------------------------------------ |
-| `cp .env.example .env` | Create local environment config                                          |
-| `make setup`           | Create ES indices, enrich policy, ingest pipeline, import Kibana objects |
-| `make up`              | Start Logstash (all 4 pipelines)                                         |
-| `make down`            | Stop Logstash                                                            |
-| `make logs`            | Tail Logstash logs                                                       |
-| `make restart`         | Restart Logstash after config changes                                    |
-| `make status`          | Show Logstash pipeline status                                            |
-| `make clean`           | Stop Logstash and remove volumes                                         |
-| `make help`            | List all available targets                                               |
+| Command                    | Purpose                                                                  |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `cp .env.example .env`     | Create local environment config                                          |
+| `make setup`               | Create ES indices, enrich policy, ingest pipeline, import Kibana objects |
+| `make deploy-indices`      | Deploy ES index templates and data streams only                          |
+| `make deploy-enrich`       | Deploy ES enrich policies only                                           |
+| `make deploy-pipelines`    | Deploy ES ingest pipelines only                                          |
+| `make deploy-kibana`       | Deploy Kibana saved objects (dashboards, data views) only                |
+| `make deploy-workflows`    | Deploy Kibana workflows only                                             |
+| `make deploy-agents`       | Deploy Kibana AI agents only                                             |
+| `make deploy-es`           | Deploy all ES resources (indices + enrich + pipelines)                   |
+| `make deploy-ai`           | Deploy AI layer (workflows + agents)                                     |
+| `make redeploy`            | Re-deploy all resources (force overwrite)                                |
+| `make up`                  | Start Logstash (all 4 pipelines)                                         |
+| `make down`                | Stop Logstash                                                            |
+| `make logs`                | Tail Logstash logs                                                       |
+| `make restart`             | Restart Logstash after config changes                                    |
+| `make status`              | Show Logstash pipeline status                                            |
+| `make clean`               | Stop Logstash and remove volumes                                         |
+| `make validate`            | Validate Docker Compose config                                           |
+| `make health`              | Check Elasticsearch cluster health                                       |
+| `make ps`                  | Show running containers                                                  |
+| `make shell`               | Open a shell inside the Logstash container                               |
+| `make help`                | List all available targets (grouped)                                     |
+
+Any deploy target accepts `FORCE=1` to overwrite existing resources, e.g. `make deploy-agents FORCE=1`.
 
 **Key conventions**:
 
@@ -52,6 +67,111 @@ Shell(command="docker ps", required_permissions=["all"])
 Shell(command="docker ps")
 Shell(command="docker ps", required_permissions=["full_network"])
 ```
+
+______________________________________________________________________
+
+## Testing via API
+
+After editing workflows (`elasticsearch/workflows/`), agents (`elasticsearch/agents/`),
+or aggregation queries, validate changes via the Elasticsearch and Kibana REST APIs.
+All commands require `required_permissions: ["all"]` in sandboxed environments.
+
+### Prerequisites
+
+```sh
+source .env   # provides ES_ENDPOINT, KB_ENDPOINT, ES_API_KEY_ENCODED
+```
+
+### Redeploy changed resources
+
+```sh
+./setup.sh --only agents,workflows --force
+```
+
+### Test an Elasticsearch query
+
+Run the query body directly against ES to validate aggregations, painless scripts, and
+mappings before deploying a workflow.
+
+```sh
+curl -s "${ES_ENDPOINT}/demos-aircraft-adsb/_search" \
+  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
+  -H "Content-Type: application/json" \
+  -d '{"size":0,"query":{...},"aggs":{...}}' | jq '.aggregations'
+```
+
+### Test a workflow
+
+The Kibana Workflows API (Technical Preview) requires the extra header
+`x-elastic-internal-origin: kibana` on every request.
+
+```sh
+# 1. Find workflow ID by name
+WF_ID=$(curl -s -X POST "${KB_ENDPOINT}/api/workflows/search" \
+  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
+  -H "kbn-xsrf: true" \
+  -H "x-elastic-internal-origin: kibana" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"My Workflow Name"}' \
+  | jq -r '.results[] | select(.name=="My Workflow Name") | .id')
+
+# 2. Run (pass inputs:{} even if the workflow has none)
+EXEC_ID=$(curl -s -X POST "${KB_ENDPOINT}/api/workflows/${WF_ID}/run" \
+  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
+  -H "kbn-xsrf: true" \
+  -H "x-elastic-internal-origin: kibana" \
+  -H "Content-Type: application/json" \
+  -d '{"inputs":{}}' | jq -r '.workflowExecutionId')
+
+# 3. Poll until status is "completed" or "failed"
+curl -s "${KB_ENDPOINT}/api/workflowExecutions/${EXEC_ID}" \
+  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
+  -H "kbn-xsrf: true" \
+  -H "x-elastic-internal-origin: kibana" \
+  | jq '{status, duration, steps: [.stepExecutions[]? | {type: .stepType, status: .status}]}'
+
+# 4. Inspect individual step output
+STEP_ID=$(curl -s "${KB_ENDPOINT}/api/workflowExecutions/${EXEC_ID}" \
+  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
+  -H "kbn-xsrf: true" \
+  -H "x-elastic-internal-origin: kibana" \
+  | jq -r '.stepExecutions[0].id')
+
+curl -s "${KB_ENDPOINT}/api/workflowExecutions/${EXEC_ID}/steps/${STEP_ID}" \
+  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
+  -H "kbn-xsrf: true" \
+  -H "x-elastic-internal-origin: kibana" | jq '.output'
+```
+
+For workflows with inputs, pass them in the run body:
+`-d '{"inputs":{"icao24":"a1b2c3","callsign":"DAL123"}}'`
+
+### Test an agent
+
+Use the Agent Builder converse API to send a message and inspect the response.
+
+```sh
+curl -s -X POST "${KB_ENDPOINT}/api/agent_builder/converse" \
+  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
+  -H "kbn-xsrf: true" \
+  -H "Content-Type: application/json" \
+  -d '{"agent_id":"${AGENT_ID}","input":"Your test prompt here"}' \
+  | jq '{status, model: .model_usage.model, response: .response.message}'
+```
+
+### Side-effect awareness
+
+Some workflows trigger real external actions when run:
+
+| Workflow | Side effects |
+| --- | --- |
+| `adsb-aggregate-stats` | None (read-only ES query) |
+| `daily-flight-briefing` | Sends Slack message, invokes AI agent |
+| `squawk-7500-enrich` | External HTTP calls (adsbdb, adsb.lol, Reuters) |
+| `squawk-7500-hijack-investigation` | Creates Kibana case, may send Slack |
+| `squawk-7500-create-case` | Creates or updates a Kibana case |
+
+Agent converse calls may invoke workflow tools and incur LLM costs.
 
 ______________________________________________________________________
 

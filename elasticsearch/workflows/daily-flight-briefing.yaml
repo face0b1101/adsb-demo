@@ -41,24 +41,60 @@ steps:
             terms:
               field: airport.iata_code
               size: 10
+              order:
+                unique_flights: desc
+            aggs:
+              unique_flights:
+                cardinality:
+                  script:
+                    source: "doc['icao24'].value + ':' + doc['callsign'].value"
+                    lang: painless
           origin_countries:
             terms:
               field: origin_country
               size: 10
+              order:
+                unique_aircraft: desc
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
           activity_breakdown:
             terms:
               field: airport.activity
+            aggs:
+              unique_flights:
+                cardinality:
+                  script:
+                    source: "doc['icao24'].value + ':' + doc['callsign'].value + ':' + doc['airport.iata_code'].value"
+                    lang: painless
           traffic_by_subregion:
             terms:
               field: geo.SUBREGION
               size: 15
+              order:
+                unique_aircraft: desc
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
           traffic_by_continent:
             terms:
               field: geo.CONTINENT
               size: 7
+              order:
+                unique_aircraft: desc
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
           ground_vs_airborne:
             terms:
               field: on_ground
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
           emergency_squawks:
             filters:
               filters:
@@ -71,6 +107,18 @@ steps:
                 general_emergency_7700:
                   term:
                     squawk: "7700"
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
+
+  - name: fetch_hijack_cases
+    type: kibana.request
+    with:
+      method: GET
+      path: "/api/cases/_find?tags=squawk-7500&owner=securitySolution&perPage=100&sortField=createdAt&sortOrder=desc"
+    on-failure:
+      continue: true
 
   - name: generate_briefing
     type: ai.agent
@@ -82,7 +130,48 @@ steps:
 
         {{ steps.aggregate_stats.output.aggregations | json:2 }}
 
-        Include all sections from your Briefing Format (items 1–9).
+        === HIJACK INVESTIGATION CASES ===
+        The following are squawk 7500 (hijack) investigation cases from
+        Kibana case management. Each case has tags that include the verdict
+        (verdict:genuine or verdict:false_positive). Use created_at timestamps
+        to identify cases from the last 24 hours. If this section is empty
+        or shows an error, state "Hijack case data unavailable" and skip
+        section 10.
+
+        {{ steps.fetch_hijack_cases.output | json:2 }}
+
+        Include all sections from your Briefing Format (items 1–10).
+
+        IMPORTANT — deduplicated counts:
+        Each bucket aggregation now contains a sub-aggregation with the
+        deduplicated count. Use these values instead of doc_count:
+        - busiest_airports → unique_flights.value (unique icao24:callsign pairs per airport)
+        - activity_breakdown → unique_flights.value (unique icao24:callsign:airport tuples per activity).
+          NOTE: activity_breakdown covers ONLY aircraft detected within airport
+          airspace zones — it is NOT a breakdown of all traffic. Label it clearly
+          as "Airport Zone Activity" and avoid percentages that imply full-dataset scope.
+        - origin_countries → unique_aircraft.value (unique icao24 per country)
+        - traffic_by_subregion / traffic_by_continent → unique_aircraft.value
+        - ground_vs_airborne → unique_aircraft.value.
+          NOTE: these buckets OVERLAP — the same aircraft appears in both
+          on_ground=true and on_ground=false if it landed or took off during
+          the 24h window. Do NOT present this as a ratio. Instead report:
+          (a) "X aircraft were detected on the ground at least once"
+          (b) "exclusively airborne" = unique_aircraft.value (top-level)
+              minus unique_aircraft.value (on_ground=true bucket). These are
+              aircraft never detected on the ground — long-haul overflights,
+              oceanic transits, or high-altitude routes. This is the more
+              noteworthy figure.
+        - emergency_squawks → unique_aircraft.value
+        The doc_count still appears but reflects raw observations — do NOT
+        use it for counts in the briefing. Always prefer the sub-agg value.
+
+        IMPORTANT — executive summary framing:
+        When summarising ground vs airborne in the executive summary, do NOT
+        say "ground outpaced airborne" or frame them as opposing categories.
+        The on-ground count is inclusive (at least once), while exclusively-
+        airborne is the remainder. Lead with the exclusively-airborne count
+        as the more interesting figure.
 
         Format the output for Slack mrkdwn (NOT standard Markdown):
         - Use *single asterisks* for bold, _underscores_ for italic
@@ -96,10 +185,10 @@ steps:
 
         Example code-block table:
         ```
-        Airport                    Detections
-        LGA  New York LaGuardia         6,779
-        ATL  Atlanta                    6,027
-        DAL  Dallas Love Field          5,953
+        Airport                  Unique Flights
+        LGA  New York LaGuardia           1,204
+        ATL  Atlanta                      1,087
+        DAL  Dallas Love Field              953
         ```
 
   - name: post_to_slack

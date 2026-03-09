@@ -88,8 +88,8 @@ declare -A GROUP_STEPS=(
   [enrich]=4
   [pipelines]=2
   [kibana]=1
-  [agents]=2
-  [workflows]=5
+  [agents]=3
+  [workflows]=13
 )
 
 TOTAL=0
@@ -515,6 +515,11 @@ setup_agents() {
     "adsb_daily_briefing_agent" \
     "elasticsearch/agents/adsb-daily-briefing-agent.json" \
     "daily briefing agent"
+
+  deploy_agent \
+    "adsb_hijack_assessment_agent" \
+    "elasticsearch/agents/adsb-hijack-assessment-agent.json" \
+    "hijack assessment agent"
 }
 
 # ---------------------------------------------------------------------------
@@ -611,6 +616,71 @@ print(json.dumps({
     echo "  or create the connector manually in Kibana > Stack Management > Connectors."
   fi
 
+  # --- Create squawk 7500 alerting rule ---
+  step_label "Creating squawk 7500 alerting rule"
+
+  local rule_id="7500a1e7-cafe-4bee-b500-deadbeef7500"
+  local rule_needs_create=true
+
+  local rule_check rule_check_code
+  rule_check=$(curl_kb -X GET "$KB_BASE/api/alerting/rule/$rule_id" 2>/dev/null)
+  rule_check_code=$(http_code_of "$rule_check")
+
+  if [[ "$rule_check_code" == "200" ]]; then
+    if [[ "$FORCE" == "true" ]]; then
+      echo "  Rule exists — recreating (--force)"
+      curl_kb -X DELETE "$KB_BASE/api/alerting/rule/$rule_id" > /dev/null 2>&1
+    else
+      echo "  Already exists — skipping"
+      rule_needs_create=false
+    fi
+  fi
+
+  if [[ "$rule_needs_create" == "true" ]]; then
+    local rule_payload
+    rule_payload=$(python3 -c "
+import json
+print(json.dumps({
+    'name': 'Squawk 7500 — Hijack Detection',
+    'rule_type_id': '.es-query',
+    'consumer': 'stackAlerts',
+    'enabled': True,
+    'schedule': {'interval': '5m'},
+    'tags': ['adsb', 'squawk-7500', 'hijack'],
+    'params': {
+        'searchType': 'esQuery',
+        'esQuery': json.dumps({'query': {'term': {'squawk': '7500'}}}),
+        'index': ['demos-aircraft-adsb'],
+        'timeField': '@timestamp',
+        'threshold': [0],
+        'thresholdComparator': '>',
+        'timeWindowSize': 5,
+        'timeWindowUnit': 'm',
+        'size': 10,
+    },
+    'actions': [],
+}))
+")
+
+    local rule_tmp rule_http
+    rule_tmp=$(mktemp)
+    rule_http=$(curl -s -w '%{http_code}' -o "$rule_tmp" \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -H "kbn-xsrf: true" \
+      -H "Content-Type: application/json" \
+      -X POST "$KB_BASE/api/alerting/rule/$rule_id" \
+      -d "$rule_payload")
+
+    if [[ "$rule_http" -lt 200 || "$rule_http" -ge 300 ]]; then
+      echo "  WARNING (HTTP $rule_http): Could not create alerting rule." >&2
+      cat "$rule_tmp" >&2
+      echo "  Create it manually in Kibana > Stack Management > Rules." >&2
+    else
+      echo "  OK (HTTP $rule_http)"
+    fi
+    rm -f "$rule_tmp"
+  fi
+
   # --- Deploy daily flight briefing workflow ---
   step_label "Deploying daily flight briefing workflow"
 
@@ -651,7 +721,7 @@ for w in workflows:
 " < "$wf_tmp" 2>/dev/null || true)
   fi
 
-  local wf_http
+  local wf_http=""
   if [[ -n "$existing_wf_id" ]]; then
     if [[ "$FORCE" == "true" ]]; then
       echo "  Workflow exists — updating (--force)"
@@ -676,17 +746,312 @@ for w in workflows:
       -d "$workflow_yaml")
   fi
 
-  if [[ "$wf_http" -lt 200 || "$wf_http" -ge 300 ]]; then
-    echo "  FAILED (HTTP $wf_http):" >&2
-    cat "$wf_tmp" >&2
+  if [[ -n "$wf_http" ]]; then
+    if [[ "$wf_http" -lt 200 || "$wf_http" -ge 300 ]]; then
+      echo "  FAILED (HTTP $wf_http):" >&2
+      cat "$wf_tmp" >&2
+      rm -f "$wf_tmp"
+      exit 1
+    fi
+
+    local wf_id
+    wf_id=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" < "$wf_tmp" 2>/dev/null || true)
+
+    local wf_name
+    wf_name=$(python3 -c "import json,sys; print(json.loads(sys.argv[1]).get('name',''))" "$workflow_yaml" 2>/dev/null || true)
+    if [[ -z "$existing_wf_id" && -n "$wf_id" && -n "$wf_name" ]]; then
+      curl -s -o /dev/null \
+        -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+        -X PUT "$KB_BASE/api/workflows/$wf_id" \
+        -H "kbn-xsrf: true" \
+        -H "x-elastic-internal-origin: kibana" \
+        -H "Content-Type: application/json" \
+        -d "$(python3 -c "import json,sys; print(json.dumps({'name': sys.argv[1]}))" "$wf_name")"
+    fi
+
+    echo "  OK (HTTP $wf_http) — workflow ID: ${wf_id:-unknown}"
     rm -f "$wf_tmp"
-    exit 1
   fi
 
-  local wf_id
-  wf_id=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" < "$wf_tmp" 2>/dev/null || true)
-  echo "  OK (HTTP $wf_http) — workflow ID: ${wf_id:-unknown}"
-  rm -f "$wf_tmp"
+  # --- Deploy squawk 7500 hijack investigation workflow ---
+  step_label "Deploying squawk 7500 hijack investigation workflow"
+
+  local hijack_yaml
+  hijack_yaml=$(python3 -c "
+import json, re, os
+with open('elasticsearch/workflows/squawk-7500-hijack-investigation.yaml') as f:
+    yaml_content = f.read()
+yaml_content = yaml_content.replace('__KB_ENDPOINT__', os.environ.get('KB_ENDPOINT', '').rstrip('/'))
+yaml_content = yaml_content.replace('__RAPIDAPI_KEY__', os.environ.get('RAPIDAPI_KEY', ''))
+payload = {'yaml': yaml_content}
+m = re.search(r'^name:\s*(.+)', yaml_content, re.MULTILINE)
+if m:
+    payload['name'] = m.group(1).strip()
+print(json.dumps(payload))
+")
+
+  local hijack_tmp
+  hijack_tmp=$(mktemp)
+
+  local hijack_search_http existing_hijack_id=""
+  hijack_search_http=$(curl -s -w '%{http_code}' -o "$hijack_tmp" \
+    -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+    -X POST "$KB_BASE/api/workflows/search" \
+    -H "kbn-xsrf: true" \
+    -H "x-elastic-internal-origin: kibana" \
+    -H "Content-Type: application/json" \
+    -d '{"query": "Squawk 7500 Hijack Investigation", "limit": 1}')
+
+  if [[ "$hijack_search_http" -ge 200 && "$hijack_search_http" -lt 300 ]]; then
+    existing_hijack_id=$(python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+workflows = data.get('workflows', data.get('results', []))
+for w in workflows:
+    if w.get('name') == 'Squawk 7500 Hijack Investigation':
+        print(w['id'])
+        break
+" < "$hijack_tmp" 2>/dev/null || true)
+  fi
+
+  local hijack_http=""
+  if [[ -n "$existing_hijack_id" ]]; then
+    if [[ "$FORCE" == "true" ]]; then
+      echo "  Workflow exists — updating (--force)"
+      hijack_http=$(curl -s -w '%{http_code}' -o "$hijack_tmp" \
+        -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+        -X PUT "$KB_BASE/api/workflows/$existing_hijack_id" \
+        -H "kbn-xsrf: true" \
+        -H "x-elastic-internal-origin: kibana" \
+        -H "Content-Type: application/json" \
+        -d "$hijack_yaml")
+    else
+      echo "  Already exists — skipping"
+      rm -f "$hijack_tmp"
+    fi
+  else
+    hijack_http=$(curl -s -w '%{http_code}' -o "$hijack_tmp" \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -X POST "$KB_BASE/api/workflows" \
+      -H "kbn-xsrf: true" \
+      -H "x-elastic-internal-origin: kibana" \
+      -H "Content-Type: application/json" \
+      -d "$hijack_yaml")
+  fi
+
+  if [[ -n "$hijack_http" ]]; then
+    if [[ "$hijack_http" -lt 200 || "$hijack_http" -ge 300 ]]; then
+      echo "  FAILED (HTTP $hijack_http):" >&2
+      cat "$hijack_tmp" >&2
+      rm -f "$hijack_tmp"
+      exit 1
+    fi
+
+    local hijack_wf_id
+    hijack_wf_id=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" < "$hijack_tmp" 2>/dev/null || true)
+
+    local hijack_name
+    hijack_name=$(python3 -c "import json,sys; print(json.loads(sys.argv[1]).get('name',''))" "$hijack_yaml" 2>/dev/null || true)
+    if [[ -z "$existing_hijack_id" && -n "$hijack_wf_id" && -n "$hijack_name" ]]; then
+      curl -s -o /dev/null \
+        -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+        -X PUT "$KB_BASE/api/workflows/$hijack_wf_id" \
+        -H "kbn-xsrf: true" \
+        -H "x-elastic-internal-origin: kibana" \
+        -H "Content-Type: application/json" \
+        -d "$(python3 -c "import json,sys; print(json.dumps({'name': sys.argv[1]}))" "$hijack_name")"
+    fi
+
+    echo "  OK (HTTP $hijack_http) — workflow ID: ${hijack_wf_id:-unknown}"
+    rm -f "$hijack_tmp"
+  fi
+
+  # --- Deploy squawk 7500 enrich workflow ---
+  step_label "Deploying squawk 7500 enrich workflow"
+
+  local enrich_yaml
+  enrich_yaml=$(python3 -c "
+import json, re, os
+with open('elasticsearch/workflows/squawk-7500-enrich.yaml') as f:
+    yaml_content = f.read()
+yaml_content = yaml_content.replace('__RAPIDAPI_KEY__', os.environ.get('RAPIDAPI_KEY', ''))
+payload = {'yaml': yaml_content}
+m = re.search(r'^name:\s*(.+)', yaml_content, re.MULTILINE)
+if m:
+    payload['name'] = m.group(1).strip()
+print(json.dumps(payload))
+")
+
+  local enrich_tmp
+  enrich_tmp=$(mktemp)
+
+  local enrich_search_http existing_enrich_id=""
+  enrich_search_http=$(curl -s -w '%{http_code}' -o "$enrich_tmp" \
+    -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+    -X POST "$KB_BASE/api/workflows/search" \
+    -H "kbn-xsrf: true" \
+    -H "x-elastic-internal-origin: kibana" \
+    -H "Content-Type: application/json" \
+    -d '{"query": "Squawk 7500 Enrich", "limit": 1}')
+
+  if [[ "$enrich_search_http" -ge 200 && "$enrich_search_http" -lt 300 ]]; then
+    existing_enrich_id=$(python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+workflows = data.get('workflows', data.get('results', []))
+for w in workflows:
+    if w.get('name') == 'Squawk 7500 Enrich':
+        print(w['id'])
+        break
+" < "$enrich_tmp" 2>/dev/null || true)
+  fi
+
+  local enrich_http=""
+  if [[ -n "$existing_enrich_id" ]]; then
+    if [[ "$FORCE" == "true" ]]; then
+      echo "  Workflow exists — updating (--force)"
+      enrich_http=$(curl -s -w '%{http_code}' -o "$enrich_tmp" \
+        -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+        -X PUT "$KB_BASE/api/workflows/$existing_enrich_id" \
+        -H "kbn-xsrf: true" \
+        -H "x-elastic-internal-origin: kibana" \
+        -H "Content-Type: application/json" \
+        -d "$enrich_yaml")
+    else
+      echo "  Already exists — skipping"
+    fi
+  else
+    enrich_http=$(curl -s -w '%{http_code}' -o "$enrich_tmp" \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -X POST "$KB_BASE/api/workflows" \
+      -H "kbn-xsrf: true" \
+      -H "x-elastic-internal-origin: kibana" \
+      -H "Content-Type: application/json" \
+      -d "$enrich_yaml")
+  fi
+
+  local enrich_wf_id="${existing_enrich_id:-}"
+  if [[ -n "$enrich_http" ]]; then
+    if [[ "$enrich_http" -lt 200 || "$enrich_http" -ge 300 ]]; then
+      echo "  FAILED (HTTP $enrich_http):" >&2
+      cat "$enrich_tmp" >&2
+      rm -f "$enrich_tmp"
+      exit 1
+    fi
+    enrich_wf_id=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" < "$enrich_tmp" 2>/dev/null || true)
+
+    local enrich_name
+    enrich_name=$(python3 -c "import json,sys; print(json.loads(sys.argv[1]).get('name',''))" "$enrich_yaml" 2>/dev/null || true)
+    if [[ -z "$existing_enrich_id" && -n "$enrich_wf_id" && -n "$enrich_name" ]]; then
+      curl -s -o /dev/null \
+        -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+        -X PUT "$KB_BASE/api/workflows/$enrich_wf_id" \
+        -H "kbn-xsrf: true" \
+        -H "x-elastic-internal-origin: kibana" \
+        -H "Content-Type: application/json" \
+        -d "$(python3 -c "import json,sys; print(json.dumps({'name': sys.argv[1]}))" "$enrich_name")"
+    fi
+
+    echo "  OK (HTTP $enrich_http) — workflow ID: ${enrich_wf_id:-unknown}"
+  fi
+  rm -f "$enrich_tmp"
+
+  register_wf_tool "squawk-7500-enrich" "${enrich_wf_id:-}" \
+    $'Gathers enrichment data for a squawk 7500 investigation \u2014 flight history from Elasticsearch, aircraft metadata and route from adsbdb, live position from adsb.lol, and Reuters news search.\n\nInputs:\n- icao24 (required string): ICAO 24-bit aircraft address\n- callsign (optional string): flight callsign\n\nReturns step outputs: flight_history (ES search), latest_position (ES search), adsbdb_lookup (HTTP), adsblol_lookup (HTTP), reuters_search (HTTP).\n\nThis is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
+    '["adsb", "squawk-7500", "enrichment"]'
+
+  # --- Deploy squawk 7500 create-case workflow ---
+  step_label "Deploying squawk 7500 create-case workflow"
+
+  local case_yaml
+  case_yaml=$(python3 -c "
+import json, re
+with open('elasticsearch/workflows/squawk-7500-create-case.yaml') as f:
+    yaml_content = f.read()
+payload = {'yaml': yaml_content}
+m = re.search(r'^name:\s*(.+)', yaml_content, re.MULTILINE)
+if m:
+    payload['name'] = m.group(1).strip()
+print(json.dumps(payload))
+")
+
+  local case_tmp
+  case_tmp=$(mktemp)
+
+  local case_search_http existing_case_id=""
+  case_search_http=$(curl -s -w '%{http_code}' -o "$case_tmp" \
+    -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+    -X POST "$KB_BASE/api/workflows/search" \
+    -H "kbn-xsrf: true" \
+    -H "x-elastic-internal-origin: kibana" \
+    -H "Content-Type: application/json" \
+    -d '{"query": "Squawk 7500 Create Case", "limit": 1}')
+
+  if [[ "$case_search_http" -ge 200 && "$case_search_http" -lt 300 ]]; then
+    existing_case_id=$(python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+workflows = data.get('workflows', data.get('results', []))
+for w in workflows:
+    if w.get('name') == 'Squawk 7500 Create Case':
+        print(w['id'])
+        break
+" < "$case_tmp" 2>/dev/null || true)
+  fi
+
+  local case_http=""
+  if [[ -n "$existing_case_id" ]]; then
+    if [[ "$FORCE" == "true" ]]; then
+      echo "  Workflow exists — updating (--force)"
+      case_http=$(curl -s -w '%{http_code}' -o "$case_tmp" \
+        -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+        -X PUT "$KB_BASE/api/workflows/$existing_case_id" \
+        -H "kbn-xsrf: true" \
+        -H "x-elastic-internal-origin: kibana" \
+        -H "Content-Type: application/json" \
+        -d "$case_yaml")
+    else
+      echo "  Already exists — skipping"
+    fi
+  else
+    case_http=$(curl -s -w '%{http_code}' -o "$case_tmp" \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -X POST "$KB_BASE/api/workflows" \
+      -H "kbn-xsrf: true" \
+      -H "x-elastic-internal-origin: kibana" \
+      -H "Content-Type: application/json" \
+      -d "$case_yaml")
+  fi
+
+  local case_wf_id="${existing_case_id:-}"
+  if [[ -n "$case_http" ]]; then
+    if [[ "$case_http" -lt 200 || "$case_http" -ge 300 ]]; then
+      echo "  FAILED (HTTP $case_http):" >&2
+      cat "$case_tmp" >&2
+      rm -f "$case_tmp"
+      exit 1
+    fi
+    case_wf_id=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" < "$case_tmp" 2>/dev/null || true)
+
+    local case_name
+    case_name=$(python3 -c "import json,sys; print(json.loads(sys.argv[1]).get('name',''))" "$case_yaml" 2>/dev/null || true)
+    if [[ -z "$existing_case_id" && -n "$case_wf_id" && -n "$case_name" ]]; then
+      curl -s -o /dev/null \
+        -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+        -X PUT "$KB_BASE/api/workflows/$case_wf_id" \
+        -H "kbn-xsrf: true" \
+        -H "x-elastic-internal-origin: kibana" \
+        -H "Content-Type: application/json" \
+        -d "$(python3 -c "import json,sys; print(json.dumps({'name': sys.argv[1]}))" "$case_name")"
+    fi
+
+    echo "  OK (HTTP $case_http) — workflow ID: ${case_wf_id:-unknown}"
+  fi
+  rm -f "$case_tmp"
+
+  register_wf_tool "squawk-7500-create-case" "${case_wf_id:-}" \
+    $'Creates or updates a Kibana case for a squawk 7500 investigation with deduplication. If an open case already exists for the aircraft, adds a comment; otherwise creates a new case.\n\nInputs:\n- icao24 (required string): ICAO 24-bit aircraft address\n- callsign (optional string): flight callsign\n- verdict (required string): genuine or false_positive\n- confidence (required string): confidence score 0\u20131\n- reasoning (required string): full assessment reasoning\n\nThis is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
+    '["adsb", "squawk-7500", "cases"]'
 
   # --- Deploy ADS-B aggregate stats workflow ---
   step_label "Deploying ADS-B aggregate stats workflow"
@@ -741,7 +1106,9 @@ for w in workflows:
     else
       echo "  Already exists — skipping"
       local agg_wf_id="$existing_agg_id"
-      register_workflow_tool "$agg_wf_id"
+      register_wf_tool "adsb-aggregate-stats" "$agg_wf_id" \
+        $'Aggregates the last 24 hours of ADS-B data from demos-aircraft-adsb. Takes no parameters (fixed now-24h window).\n\nReturned aggregation keys:\n- unique_aircraft: cardinality of icao24\n- busiest_airports: top 10 by airport.iata_code\n- origin_countries: top 10 by origin_country\n- activity_breakdown: terms on airport.activity (arriving, departing, taxiing, overflight, at_airport — airport airspace zone only)\n- traffic_by_subregion: top 15 by geo.SUBREGION\n- traffic_by_continent: top 7 by geo.CONTINENT\n- ground_vs_airborne: terms on on_ground\n- emergency_squawks: named filters for 7500 (hijack), 7600 (radio failure), 7700 (general emergency)\n\nResults are at output.aggregations. Total document count is at hits.total.value. This is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
+        '["adsb", "aggregation"]'
       rm -f "$agg_tmp"
       return 0
     fi
@@ -764,27 +1131,141 @@ for w in workflows:
 
   local agg_wf_id
   agg_wf_id=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" < "$agg_tmp" 2>/dev/null || true)
+
+  local agg_name
+  agg_name=$(python3 -c "import json,sys; print(json.loads(sys.argv[1]).get('name',''))" "$agg_yaml" 2>/dev/null || true)
+  if [[ -z "$existing_agg_id" && -n "$agg_wf_id" && -n "$agg_name" ]]; then
+    curl -s -o /dev/null \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -X PUT "$KB_BASE/api/workflows/$agg_wf_id" \
+      -H "kbn-xsrf: true" \
+      -H "x-elastic-internal-origin: kibana" \
+      -H "Content-Type: application/json" \
+      -d "$(python3 -c "import json,sys; print(json.dumps({'name': sys.argv[1]}))" "$agg_name")"
+  fi
+
   echo "  OK (HTTP $agg_http) — workflow ID: ${agg_wf_id:-unknown}"
 
-  register_workflow_tool "$agg_wf_id"
+  register_wf_tool "adsb-aggregate-stats" "$agg_wf_id" \
+    $'Aggregates the last 24 hours of ADS-B data from demos-aircraft-adsb. Takes no parameters (fixed now-24h window).\n\nReturned aggregation keys:\n- unique_aircraft: cardinality of icao24\n- busiest_airports: top 10 by airport.iata_code\n- origin_countries: top 10 by origin_country\n- activity_breakdown: terms on airport.activity (arriving, departing, taxiing, overflight, at_airport — airport airspace zone only)\n- traffic_by_subregion: top 15 by geo.SUBREGION\n- traffic_by_continent: top 7 by geo.CONTINENT\n- ground_vs_airborne: terms on on_ground\n- emergency_squawks: named filters for 7500 (hijack), 7600 (radio failure), 7700 (general emergency)\n\nResults are at output.aggregations. Total document count is at hits.total.value. This is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
+    '["adsb", "aggregation"]'
   rm -f "$agg_tmp"
+
+  # --- Deploy hijack cases summary workflow ---
+  step_label "Deploying hijack cases summary workflow"
+
+  local hcs_yaml
+  hcs_yaml=$(python3 -c "
+import json, re
+with open('elasticsearch/workflows/hijack-cases-summary.yaml') as f:
+    yaml_content = f.read()
+payload = {'yaml': yaml_content}
+m = re.search(r'^name:\s*(.+)', yaml_content, re.MULTILINE)
+if m:
+    payload['name'] = m.group(1).strip()
+print(json.dumps(payload))
+")
+
+  local hcs_tmp
+  hcs_tmp=$(mktemp)
+
+  local hcs_search_http existing_hcs_id=""
+  hcs_search_http=$(curl -s -w '%{http_code}' -o "$hcs_tmp" \
+    -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+    -X POST "$KB_BASE/api/workflows/search" \
+    -H "kbn-xsrf: true" \
+    -H "x-elastic-internal-origin: kibana" \
+    -H "Content-Type: application/json" \
+    -d '{"query": "Hijack Cases Summary", "limit": 1}')
+
+  if [[ "$hcs_search_http" -ge 200 && "$hcs_search_http" -lt 300 ]]; then
+    existing_hcs_id=$(python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+workflows = data.get('workflows', data.get('results', []))
+for w in workflows:
+    if w.get('name') == 'Hijack Cases Summary':
+        print(w['id'])
+        break
+" < "$hcs_tmp" 2>/dev/null || true)
+  fi
+
+  local hcs_http
+  if [[ -n "$existing_hcs_id" ]]; then
+    if [[ "$FORCE" == "true" ]]; then
+      echo "  Workflow exists — updating (--force)"
+      hcs_http=$(curl -s -w '%{http_code}' -o "$hcs_tmp" \
+        -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+        -X PUT "$KB_BASE/api/workflows/$existing_hcs_id" \
+        -H "kbn-xsrf: true" \
+        -H "x-elastic-internal-origin: kibana" \
+        -H "Content-Type: application/json" \
+        -d "$hcs_yaml")
+    else
+      echo "  Already exists — skipping"
+      local hcs_wf_id="$existing_hcs_id"
+      register_wf_tool "hijack-cases-summary" "$hcs_wf_id" \
+        $'Fetches squawk 7500 (hijack) investigation cases from Kibana case management. Returns case titles, tags (including verdict:genuine or verdict:false_positive), status, and creation dates.\n\nUse this to review hijack investigation outcomes — how many were genuine vs false positive. Cases are tagged with verdict:genuine or verdict:false_positive after AI assessment.\n\nResults are at output.cases (array) and output.total (count). This is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
+        '["adsb", "squawk-7500", "cases"]'
+      rm -f "$hcs_tmp"
+      return 0
+    fi
+  else
+    hcs_http=$(curl -s -w '%{http_code}' -o "$hcs_tmp" \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -X POST "$KB_BASE/api/workflows" \
+      -H "kbn-xsrf: true" \
+      -H "x-elastic-internal-origin: kibana" \
+      -H "Content-Type: application/json" \
+      -d "$hcs_yaml")
+  fi
+
+  if [[ "$hcs_http" -lt 200 || "$hcs_http" -ge 300 ]]; then
+    echo "  FAILED (HTTP $hcs_http):" >&2
+    cat "$hcs_tmp" >&2
+    rm -f "$hcs_tmp"
+    exit 1
+  fi
+
+  local hcs_wf_id
+  hcs_wf_id=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" < "$hcs_tmp" 2>/dev/null || true)
+
+  local hcs_name
+  hcs_name=$(python3 -c "import json,sys; print(json.loads(sys.argv[1]).get('name',''))" "$hcs_yaml" 2>/dev/null || true)
+  if [[ -z "$existing_hcs_id" && -n "$hcs_wf_id" && -n "$hcs_name" ]]; then
+    curl -s -o /dev/null \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -X PUT "$KB_BASE/api/workflows/$hcs_wf_id" \
+      -H "kbn-xsrf: true" \
+      -H "x-elastic-internal-origin: kibana" \
+      -H "Content-Type: application/json" \
+      -d "$(python3 -c "import json,sys; print(json.dumps({'name': sys.argv[1]}))" "$hcs_name")"
+  fi
+
+  echo "  OK (HTTP $hcs_http) — workflow ID: ${hcs_wf_id:-unknown}"
+
+  register_wf_tool "hijack-cases-summary" "$hcs_wf_id" \
+    $'Fetches squawk 7500 (hijack) investigation cases from Kibana case management. Returns case titles, tags (including verdict:genuine or verdict:false_positive), status, and creation dates.\n\nUse this to review hijack investigation outcomes — how many were genuine vs false positive. Cases are tagged with verdict:genuine or verdict:false_positive after AI assessment.\n\nResults are at output.cases (array) and output.total (count). This is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
+    '["adsb", "squawk-7500", "cases"]'
+  rm -f "$hcs_tmp"
 }
 
-register_workflow_tool() {
-  local wf_id="$1"
+register_wf_tool() {
+  local tool_id="$1" wf_id="$2" tool_desc="$3" tags_json="$4"
   [[ -z "$wf_id" ]] && return 0
 
-  step_label "Registering adsb-aggregate-stats workflow tool"
+  step_label "Registering $tool_id workflow tool"
 
   local tool_payload
-  tool_payload=$(python3 -c "
-import json
+  tool_payload=$(TOOL_ID="$tool_id" TOOL_DESC="$tool_desc" TAGS_JSON="$tags_json" WF_ID="$wf_id" \
+    python3 -c "
+import json, os
 print(json.dumps({
-    'id': 'adsb-aggregate-stats',
-    'description': 'Aggregates the last 24 hours of ADS-B data from demos-aircraft-adsb. Takes no parameters (fixed now-24h window).\n\nReturned aggregation keys:\n- unique_aircraft: cardinality of icao24\n- busiest_airports: top 10 by airport.iata_code\n- origin_countries: top 10 by origin_country\n- activity_breakdown: terms on airport.activity (arriving, departing, taxiing, overflight, at_airport — airport airspace zone only)\n- traffic_by_subregion: top 15 by geo.SUBREGION\n- traffic_by_continent: top 7 by geo.CONTINENT\n- ground_vs_airborne: terms on on_ground\n- emergency_squawks: named filters for 7500 (hijack), 7600 (radio failure), 7700 (general emergency)\n\nResults are at output.aggregations. Total document count is at hits.total.value. This is an async workflow — poll with platform.core.get_workflow_execution_status until complete.',
+    'id': os.environ['TOOL_ID'],
+    'description': os.environ['TOOL_DESC'],
     'type': 'workflow',
-    'tags': ['adsb', 'aggregation'],
-    'configuration': {'workflow_id': '$wf_id'}
+    'tags': json.loads(os.environ['TAGS_JSON']),
+    'configuration': {'workflow_id': os.environ['WF_ID']}
 }))
 ")
 
@@ -805,7 +1286,7 @@ print(json.dumps({
       tool_update_payload=$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); [d.pop(k,None) for k in ('id','type')]; print(json.dumps(d))" "$tool_payload")
       tool_http=$(curl -s -w '%{http_code}' -o "$tool_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/agent_builder/tools/adsb-aggregate-stats" \
+        -X PUT "$KB_BASE/api/agent_builder/tools/$tool_id" \
         -H "kbn-xsrf: true" \
         -H "Content-Type: application/json" \
         -d "$tool_update_payload")

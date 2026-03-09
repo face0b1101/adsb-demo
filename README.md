@@ -106,9 +106,11 @@ POST /_security/api_key
           "privileges": [
             "feature_savedObjectsManagement.all",
             "feature_agentBuilder.all",
-            "feature_workflows.all",
+            "feature_workflowsManagement.all",
             "feature_actions.all",
-            "feature_advancedSettings.all"
+            "feature_stackAlerts.all",
+            "feature_advancedSettings.all",
+            "feature_siem.all"
           ],
           "resources": ["*"]
         }
@@ -160,7 +162,7 @@ OPENSKY_API_PW=your_opensky_password
 Run the setup script to create the geo-shapes and airports indices, enrich policies, ingest pipeline, index template, import Kibana saved objects (dashboards, data views), deploy the AI agents, and set up the daily briefing workflow. The script reads `ES_ENDPOINT`, `ES_API_KEY_ENCODED`, and `KB_ENDPOINT` from your `.env` file.
 
 ```bash
-./setup.sh
+make setup        # or: ./setup.sh
 ```
 
 The script is safe to re-run — existing resources are skipped by default. Use `--only` to run specific groups and `--force` to overwrite existing resources:
@@ -172,12 +174,12 @@ The script is safe to re-run — existing resources are skipped by default. Use 
 ./setup.sh --help                    # Show available groups and flags
 ```
 
-Available groups: `indices`, `enrich`, `pipelines`, `kibana`, `agents`, `workflows`.
+Available groups: `indices`, `enrich`, `pipelines`, `kibana`, `agents`, `workflows`. There are also `make` shortcuts for each group — see [Make Targets](#make-targets) below.
 
 ### 4. Run
 
 ```bash
-docker compose up -d
+make up           # or: docker compose up -d
 ```
 
 All four quadrant pipelines start automatically. Each polls OpenSky every 6 minutes and writes to the `demos-aircraft-adsb` data stream.
@@ -187,13 +189,13 @@ All four quadrant pipelines start automatically. Each polls OpenSky every 6 minu
 Check logs:
 
 ```bash
-docker compose logs -f logstash
+make logs         # or: docker compose logs -f logstash
 ```
 
 Confirm all pipelines are running:
 
 ```bash
-docker compose exec logstash curl -s localhost:9600/_node/pipelines?pretty
+make status       # or: docker compose exec logstash curl -s localhost:9600/_node/pipelines?pretty
 ```
 
 You should see `adsb-q1` through `adsb-q4` in the response.
@@ -201,8 +203,54 @@ You should see `adsb-q1` through `adsb-q4` in the response.
 ## Stopping
 
 ```bash
-docker compose down
+make down         # or: docker compose down
 ```
+
+## Make Targets
+
+Run `make help` to see all available targets. Every target is a thin wrapper around `setup.sh` or `docker compose`.
+
+### Setup / Deploy
+
+| Command | Description |
+| --- | --- |
+| `make setup` | Run full Elasticsearch setup (skip existing) |
+| `make deploy-indices` | Deploy ES index templates and data streams |
+| `make deploy-enrich` | Deploy ES enrich policies |
+| `make deploy-pipelines` | Deploy ES ingest pipelines |
+| `make deploy-kibana` | Deploy Kibana saved objects (dashboards, data views) |
+| `make deploy-workflows` | Deploy Kibana workflows |
+| `make deploy-agents` | Deploy Kibana AI agents |
+| `make deploy-es` | Deploy all ES resources (indices + enrich + pipelines) |
+| `make deploy-ai` | Deploy AI layer (workflows + agents) |
+| `make redeploy` | Re-deploy all resources with `--force` |
+
+Any deploy target accepts `FORCE=1` to overwrite existing resources:
+
+```bash
+make deploy-agents FORCE=1
+make setup FORCE=1
+```
+
+### Logstash
+
+| Command | Description |
+| --- | --- |
+| `make up` | Start Logstash |
+| `make down` | Stop Logstash |
+| `make logs` | Tail Logstash logs |
+| `make restart` | Restart Logstash after config changes |
+| `make status` | Show Logstash pipeline status |
+| `make clean` | Stop Logstash and remove volumes |
+
+### Diagnostics
+
+| Command | Description |
+| --- | --- |
+| `make validate` | Validate Docker Compose config |
+| `make health` | Check Elasticsearch cluster health |
+| `make ps` | Show running containers |
+| `make shell` | Open a shell inside the Logstash container |
 
 ## Project Structure
 

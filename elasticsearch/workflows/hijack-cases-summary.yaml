@@ -1,0 +1,17 @@
+name: Hijack Cases Summary
+description: >-
+  Fetches squawk 7500 (hijack) investigation cases from the last 24 hours.
+  Returns case titles, tags (including verdict:genuine or verdict:false_positive),
+  and status for use in the daily briefing or interactive queries.
+enabled: true
+tags: ["adsb", "squawk-7500", "cases", "briefing"]
+
+triggers:
+  - type: manual
+
+steps:
+  - name: fetch_cases
+    type: kibana.request
+    with:
+      method: GET
+      path: "/api/cases/_find?tags=squawk-7500&owner=securitySolution&perPage=100&sortField=createdAt&sortOrder=desc"

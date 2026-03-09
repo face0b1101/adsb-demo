@@ -33,24 +33,60 @@ steps:
             terms:
               field: airport.iata_code
               size: 10
+              order:
+                unique_flights: desc
+            aggs:
+              unique_flights:
+                cardinality:
+                  script:
+                    source: "doc['icao24'].value + ':' + doc['callsign'].value"
+                    lang: painless
           origin_countries:
             terms:
               field: origin_country
               size: 10
+              order:
+                unique_aircraft: desc
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
           activity_breakdown:
             terms:
               field: airport.activity
+            aggs:
+              unique_flights:
+                cardinality:
+                  script:
+                    source: "doc['icao24'].value + ':' + doc['callsign'].value + ':' + doc['airport.iata_code'].value"
+                    lang: painless
           traffic_by_subregion:
             terms:
               field: geo.SUBREGION
               size: 15
+              order:
+                unique_aircraft: desc
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
           traffic_by_continent:
             terms:
               field: geo.CONTINENT
               size: 7
+              order:
+                unique_aircraft: desc
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
           ground_vs_airborne:
             terms:
               field: on_ground
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24
           emergency_squawks:
             filters:
               filters:
@@ -63,3 +99,7 @@ steps:
                 general_emergency_7700:
                   term:
                     squawk: "7700"
+            aggs:
+              unique_aircraft:
+                cardinality:
+                  field: icao24

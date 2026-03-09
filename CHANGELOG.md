@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-03-09
+
+### Added
+
+- **Squawk 7500 hijack detection pipeline** — end-to-end automated response when a transponder broadcasts squawk 7500 (hijack):
+  - **Alerting rule** — ES query rule checks `demos-aircraft-adsb` every 5 minutes for `squawk: "7500"` events; created idempotently by `setup.sh`
+  - **Enrichment workflow** (`squawk-7500-enrich.yaml`) — fetches aircraft metadata from adsbdb, live position from adsb.lol, and correlated news from Reuters via RapidAPI
+  - **Investigation workflow** (`squawk-7500-hijack-investigation.yaml`) — orchestrates enrichment, AI assessment, case creation, and optional Slack notification
+  - **Case creation workflow** (`squawk-7500-create-case.yaml`) — creates or updates a Kibana Security case tagged `squawk-7500` with verdict tags (`verdict:genuine` / `verdict:false_positive`)
+  - **Cases summary workflow** (`hijack-cases-summary.yaml`) — retrieves squawk 7500 investigation cases from Kibana case management for briefing integration
+- **Hijack assessment agent** (`adsb-hijack-assessment-agent.json`) — AI agent that evaluates squawk 7500 events using enriched context (aircraft history, live position, news correlation) and renders a structured verdict
+- **Agent documentation** (`elasticsearch/agents/README.md`) — architecture, deployment, and testing guide for all AI agents
+- **Workflow documentation** (`elasticsearch/workflows/README.md`) — reference for all workflows including triggers, inputs, side effects, and deployment
+- **`RAPIDAPI_KEY`** environment variable in `.env.example` for Reuters news search in the hijack investigation workflow
+- **Makefile deploy targets** — granular `deploy-indices`, `deploy-enrich`, `deploy-pipelines`, `deploy-kibana`, `deploy-workflows`, `deploy-agents`, `deploy-es`, `deploy-ai`, `redeploy` targets with `FORCE=1` support
+- **Makefile diagnostics** — `validate`, `health`, `ps`, `shell` targets
+- **Make Targets** reference section in README with tables for all target groups
+- **Testing via API** section in `AGENTS.md` — recipes for testing workflows, agents, and ES queries via curl
+
+### Changed
+
+- **Aggregation deduplication** — all bucket aggregations in `adsb-aggregate-stats.yaml` and `daily-flight-briefing.yaml` now include cardinality sub-aggregations (`unique_flights` / `unique_aircraft`) so counts reflect distinct aircraft or flights rather than raw observation `doc_count`
+- **Daily briefing agent instructions** — rewritten to use deduplicated counts, add OpenSky Network coverage caveats, correct ground-vs-airborne framing (overlapping buckets, not a ratio), and integrate hijack investigation cases (section 10)
+- **Daily briefing workflow** — fetches hijack cases from Kibana case management (`fetch_hijack_cases` step), expanded agent prompt with deduplication guidance and executive-summary framing rules
+- **API key role descriptor** — added `feature_workflowsManagement.all`, `feature_stackAlerts.all`, and `feature_siem.all` Kibana privileges (replaced `feature_workflows.all`)
+- **`setup.sh` expanded** — deploys hijack assessment agent, squawk 7500 alerting rule, and four new workflows; workflow deploy logic refactored with rename-after-create and improved error handling
+- **Makefile restructured** — grouped targets under `##@` section headers with improved `help` output using `awk`
+- **AGENTS.md Make targets table** — expanded to include all deploy, diagnostics, and help targets
+- **README getting started** — commands updated to use `make` shortcuts (`make setup`, `make up`, `make logs`, `make status`, `make down`)
+
 ## [1.0.0] - 2026-03-09
 
 First stable release. Complete ADS-B flight tracking pipeline with real-time
@@ -107,4 +137,5 @@ Kibana dashboards.
 [0.2.0]: https://github.com/face0b1101/adsb-demo/compare/v0.1.0...v0.2.0
 [0.3.0]: https://github.com/face0b1101/adsb-demo/compare/v0.2.0...v0.3.0
 [1.0.0]: https://github.com/face0b1101/adsb-demo/compare/v0.3.0...v1.0.0
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.0.0...HEAD
+[1.1.0]: https://github.com/face0b1101/adsb-demo/compare/v1.0.0...v1.1.0
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.1.0...HEAD
