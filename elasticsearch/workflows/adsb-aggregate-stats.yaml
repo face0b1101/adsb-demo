@@ -1,0 +1,65 @@
+name: ADS-B Aggregate Stats
+description: >-
+  Aggregates 24 hours of ADS-B flight statistics — unique aircraft, busiest
+  airports, origin countries, airport activity breakdown, regional traffic,
+  and emergency squawks. Returns raw aggregation results.
+enabled: true
+tags: ["adsb", "aggregation"]
+
+consts:
+  indexName: "demos-aircraft-adsb"
+  lookbackWindow: "now-24h"
+
+triggers:
+  - type: manual
+
+steps:
+  - name: aggregate_stats
+    type: elasticsearch.request
+    with:
+      method: POST
+      path: "/demos-aircraft-adsb/_search"
+      body:
+        size: 0
+        query:
+          range:
+            "@timestamp":
+              gte: "now-24h"
+        aggs:
+          unique_aircraft:
+            cardinality:
+              field: icao24
+          busiest_airports:
+            terms:
+              field: airport.iata_code
+              size: 10
+          origin_countries:
+            terms:
+              field: origin_country
+              size: 10
+          activity_breakdown:
+            terms:
+              field: airport.activity
+          traffic_by_subregion:
+            terms:
+              field: geo.SUBREGION
+              size: 15
+          traffic_by_continent:
+            terms:
+              field: geo.CONTINENT
+              size: 7
+          ground_vs_airborne:
+            terms:
+              field: on_ground
+          emergency_squawks:
+            filters:
+              filters:
+                hijack_7500:
+                  term:
+                    squawk: "7500"
+                radio_failure_7600:
+                  term:
+                    squawk: "7600"
+                general_emergency_7700:
+                  term:
+                    squawk: "7700"

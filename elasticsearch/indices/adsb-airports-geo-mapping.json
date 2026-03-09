@@ -7,8 +7,23 @@
       "geo": {
         "properties": {
           "airspace":    { "type": "geo_shape" },
-          "location":    { "type": "geo_point" },
-          "description": { "type": "keyword" }
+          "country": {
+            "properties": {
+              "ADM0_A3":    { "type": "keyword" },
+              "ADMIN":      { "type": "keyword" },
+              "BRK_A3":     { "type": "keyword" },
+              "CONTINENT":  { "type": "keyword" },
+              "ISO_A3":     { "type": "keyword" },
+              "NAME":       { "type": "keyword" },
+              "NAME_LONG":  { "type": "keyword" },
+              "REGION_UN":  { "type": "keyword" },
+              "REGION_WB":  { "type": "keyword" },
+              "SOVEREIGNT": { "type": "keyword" },
+              "SUBREGION":  { "type": "keyword" }
+            }
+          },
+          "description": { "type": "keyword" },
+          "location":    { "type": "geo_point" }
         }
       },
       "gps_code":     { "type": "keyword" },

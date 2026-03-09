@@ -16,13 +16,18 @@ flowchart LR
     LS["Logstash"]
     ES["Elasticsearch"]
     KB["Kibana"]
-    AB["AI Agent"]
+    AB["AI Agents"]
+    WF["Workflow"]
+    SL["Slack"]
 
     OSN -->|"HTTP poll every 6 min"| LS
     LS -->|"enrich + index"| ES
     ES -->|"visualise"| KB
     AB -->|"query"| ES
     KB -->|"Agent Builder"| AB
+    WF -->|"aggregate + AI prompt"| ES
+    WF -->|"post briefing"| SL
+    AB -.->|"trigger"| WF
 ```
 
 Each pipeline covers one quadrant of the globe. Splitting the world into four smaller queries is more efficient than a single global request.
@@ -43,6 +48,22 @@ The setup script deploys an **Aircraft ADS-B Tracking Specialist** agent via the
 Once deployed, the agent is available in Kibana under **AI Agents** (or via the `POST /api/agent_builder/converse` API).
 
 Make sure you have an [LLM configured in Kibana](https://www.elastic.co/docs/explore-analyze/ai-features/llm-guides/llm-connectors), select the agent and throw some natural language querying its way.
+
+### Workflows
+
+The setup script deploys a **Daily Flight Briefing** workflow via [Elastic Workflows](https://www.elastic.co/docs/explore-analyze/workflows) (Preview, Stack 9.3+). The workflow runs automatically at 08:00 Europe/London each day and:
+
+1. Aggregates 24 hours of ADS-B data — unique aircraft, busiest airports, top origin countries, regional traffic by UN subregion, activity breakdown, and emergency squawk codes (7500/7600/7700)
+2. Invokes the **ADS-B Daily Briefing Analyst** agent to generate a natural-language briefing from the aggregation results
+3. Posts the briefing to a Slack channel (if a Slack connector is configured)
+
+A dedicated **ADS-B Daily Briefing Analyst** agent is also deployed. You can ask it to trigger the briefing on demand, review results, or discuss findings.
+
+**Prerequisites for workflows:**
+
+- **LLM connector** — an AI connector (OpenAI, Gemini, etc.) must be [configured in Kibana](https://www.elastic.co/docs/explore-analyze/ai-features/llm-guides/llm-connectors) as the default AI connector. The workflow and agents use whichever connector is set as the default.
+- **Slack (optional)** — to receive briefings in Slack, [create a Slack app](https://api.slack.com/messaging/webhooks) with an incoming webhook and add the webhook URL to `.env` as `SLACK_WEBHOOK_URL`. The setup script creates the Kibana connector automatically. Alternatively, configure the connector manually in Kibana under Stack Management > Connectors.
+- **Workflows feature flag** — `setup.sh` enables this automatically via the Kibana settings API. If it fails, enable it manually: Kibana > Stack Management > Advanced Settings > search for `workflows:ui:enabled` and set it to `true`.
 
 ## Getting Started with Elasticsearch
 
@@ -84,7 +105,10 @@ POST /_security/api_key
           "application": "kibana-.kibana",
           "privileges": [
             "feature_savedObjectsManagement.all",
-            "feature_agentBuilder.all"
+            "feature_agentBuilder.all",
+            "feature_workflows.all",
+            "feature_actions.all",
+            "feature_advancedSettings.all"
           ],
           "resources": ["*"]
         }
@@ -133,11 +157,22 @@ OPENSKY_API_PW=your_opensky_password
 
 ### 3. Set up Elasticsearch
 
-Run the setup script to create the geo-shapes and airports indices, enrich policies, ingest pipeline, index template, import Kibana saved objects (dashboards, data views), and deploy the AI agent. The script reads `ES_ENDPOINT`, `ES_API_KEY_ENCODED`, and `KB_ENDPOINT` from your `.env` file.
+Run the setup script to create the geo-shapes and airports indices, enrich policies, ingest pipeline, index template, import Kibana saved objects (dashboards, data views), deploy the AI agents, and set up the daily briefing workflow. The script reads `ES_ENDPOINT`, `ES_API_KEY_ENCODED`, and `KB_ENDPOINT` from your `.env` file.
 
 ```bash
 ./setup.sh
 ```
+
+The script is safe to re-run — existing resources are skipped by default. Use `--only` to run specific groups and `--force` to overwrite existing resources:
+
+```bash
+./setup.sh --only agents,workflows   # Re-deploy agents and workflows only
+./setup.sh --only kibana --force     # Reset dashboards to source-controlled versions
+./setup.sh --force                   # Overwrite everything
+./setup.sh --help                    # Show available groups and flags
+```
+
+Available groups: `indices`, `enrich`, `pipelines`, `kibana`, `agents`, `workflows`.
 
 ### 4. Run
 
@@ -175,18 +210,28 @@ docker compose down
 .
 ├── docker-compose.yml
 ├── .env.example
-├── setup.sh                                          # One-command Elasticsearch setup
-├── elasticsearch/
-│   ├── index-template.json                           # Index template for the data stream
-│   ├── ingest-pipeline.json                          # Ingest pipeline (enrich + trim)
-│   ├── enrich-policy.json                            # Country geo-shape enrich policy
-│   ├── geo-shapes-world-countries-50m-mapping.json   # Source index mapping for country boundaries
+├── setup.sh                                          # Setup script (--only, --force supported)
+├── data/
 │   ├── geo-shapes-world-countries-50m-data.json      # Country boundary geo-shapes (bulk data)
-│   ├── adsb-airport-enrich-policy.json               # Airport proximity enrich policy
-│   ├── adsb-airports-geo-mapping.json                # Source index mapping for airports (Natural Earth + coverage)
-│   ├── adsb-airports-geo-data.ndjson                  # 893 airports with multilingual names, ICAO codes, and coverage polygons
-│   ├── adsb-saved-objects.ndjson                     # Kibana saved objects (dashboards, data views)
-│   └── adsb-agent.json                               # AI agent definition (Aircraft ADS-B Tracking Specialist)
+│   └── adsb-airports-geo-data.ndjson                 # 893 airports with multilingual names, ICAO codes, and coverage polygons
+├── elasticsearch/
+│   ├── agents/
+│   │   ├── adsb-agent.json                           # AI agent definition (Aircraft ADS-B Tracking Specialist)
+│   │   └── adsb-daily-briefing-agent.json            # AI agent definition (Daily Briefing Analyst)
+│   ├── enrich/
+│   │   ├── adsb-geo-enrich-policy.json               # Country geo-shape enrich policy
+│   │   └── adsb-airport-enrich-policy.json           # Airport proximity enrich policy
+│   ├── indices/
+│   │   ├── geo-shapes-world-countries-50m-mapping.json # Source index mapping for country boundaries
+│   │   ├── adsb-airports-geo-mapping.json            # Source index mapping for airports (Natural Earth + coverage)
+│   │   └── adsb-index-template.json                  # Index template for the data stream
+│   ├── kibana/
+│   │   └── adsb-saved-objects.ndjson                 # Kibana saved objects (dashboards, data views)
+│   ├── pipelines/
+│   │   └── adsb-ingest-pipeline.json                 # Ingest pipeline (enrich + trim)
+│   └── workflows/
+│       ├── adsb-aggregate-stats.yaml                 # Workflow: 24h ADS-B aggregation (agent tool)
+│       └── daily-flight-briefing.yaml                # Workflow: daily AI-powered flight briefing
 └── logstash/
     ├── config/
     │   ├── logstash.yml                              # Logstash node settings

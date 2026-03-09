@@ -1,6 +1,25 @@
+# Environment
 .env
+
+# OS files
 .DS_Store
-*.log
+Thumbs.db
+
+# IDE / editors
 .cursor/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temp / backup
+*.tmp
+*.bak
+*.log
+
+# Project-specific
+hive-mind/
+docker-compose.override.yml
 logstash/files/*
 !logstash/files/.gitkeep
+WORKFLOWS-GH-REPO.md

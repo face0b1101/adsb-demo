@@ -1,0 +1,118 @@
+name: Daily Flight Briefing
+description: >-
+  AI-powered daily briefing — aggregates 24h ADS-B flight statistics
+  (unique aircraft, busiest airports, regional traffic, emergency squawks)
+  and posts a natural-language summary to Slack.
+enabled: true
+tags: ["adsb", "briefing", "scheduled", "ai"]
+
+consts:
+  indexName: "demos-aircraft-adsb"
+  lookbackWindow: "now-24h"
+
+triggers:
+  - type: scheduled
+    with:
+      rrule:
+        freq: DAILY
+        interval: 1
+        tzid: Europe/London
+        byhour: [8]
+        byminute: [0]
+  - type: manual
+
+steps:
+  - name: aggregate_stats
+    type: elasticsearch.request
+    with:
+      method: POST
+      path: "/demos-aircraft-adsb/_search"
+      body:
+        size: 0
+        query:
+          range:
+            "@timestamp":
+              gte: "now-24h"
+        aggs:
+          unique_aircraft:
+            cardinality:
+              field: icao24
+          busiest_airports:
+            terms:
+              field: airport.iata_code
+              size: 10
+          origin_countries:
+            terms:
+              field: origin_country
+              size: 10
+          activity_breakdown:
+            terms:
+              field: airport.activity
+          traffic_by_subregion:
+            terms:
+              field: geo.SUBREGION
+              size: 15
+          traffic_by_continent:
+            terms:
+              field: geo.CONTINENT
+              size: 7
+          ground_vs_airborne:
+            terms:
+              field: on_ground
+          emergency_squawks:
+            filters:
+              filters:
+                hijack_7500:
+                  term:
+                    squawk: "7500"
+                radio_failure_7600:
+                  term:
+                    squawk: "7600"
+                general_emergency_7700:
+                  term:
+                    squawk: "7700"
+
+  - name: generate_briefing
+    type: ai.agent
+    with:
+      agent_id: "adsb_daily_briefing_agent"
+      message: |
+        Generate the daily ADS-B flight briefing from the following
+        24-hour aggregated statistics:
+
+        {{ steps.aggregate_stats.output.aggregations | json:2 }}
+
+        Include all sections from your Briefing Format (items 1–9).
+
+        Format the output for Slack mrkdwn (NOT standard Markdown):
+        - Use *single asterisks* for bold, _underscores_ for italic
+        - NEVER use # headers, **double asterisks**, | pipe tables |, or --- horizontal rules
+        - Use blank lines and *Bold Section Headers* to separate sections
+        - Present ranked/tabular data inside triple-backtick code blocks with fixed-width justified spacing:
+          - Left-align text columns, right-align numeric columns
+          - Pad with spaces so columns align in monospaced font
+        - Always show airports as IATA code + full airport name
+        - Use bullet lists for non-tabular data
+
+        Example code-block table:
+        ```
+        Airport                    Detections
+        LGA  New York LaGuardia         6,779
+        ATL  Atlanta                    6,027
+        DAL  Dallas Love Field          5,953
+        ```
+
+  - name: post_to_slack
+    type: slack
+    connector-id: "d85ca362-fb82-56f6-867c-4ef2c356d912"
+    with:
+      message: |
+        :airplane: *Daily ADS-B Flight Briefing*
+        _Generated {{ execution.startedAt }}_
+
+        {{ steps.generate_briefing.output.message }}
+
+        :bar_chart: <__KB_ENDPOINT__/app/dashboards#/view/06362a65-7aa3-5854-aea9-46954b3140fc?_g=(filters:!(),refreshInterval:(pause:!t,value:60000),time:(from:now-24h,to:now))|Open Dashboard>
+
+    on-failure:
+      continue: true
