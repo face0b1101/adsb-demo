@@ -47,7 +47,7 @@ flowchart LR
         Slack["Slack"]
         adsbdb["adsbdb API"]
         adsblol["adsb.lol API"]
-        Reuters["Reuters API"]
+        GNews["GNews API"]
     end
 
     Schedule --> DailyBriefing
@@ -66,14 +66,14 @@ flowchart LR
     HijackInvestigation --> Slack
     HijackInvestigation --> adsbdb
     HijackInvestigation --> adsblol
-    HijackInvestigation --> Reuters
+    HijackInvestigation --> GNews
 
     HijackAgent -.->|"workflow tool"| Enrich
     HijackAgent -.->|"workflow tool"| CreateCase
 
     Enrich --> adsbdb
     Enrich --> adsblol
-    Enrich --> Reuters
+    Enrich --> GNews
 ```
 
 > Solid arrows are direct step invocations. Dashed arrows show workflows
@@ -146,7 +146,7 @@ ______________________________________________________________________
 **Trigger:** alert (squawk 7500 alerting rule) + manual
 **Index:** `demos-aircraft-adsb`
 **Agent:** `adsb_hijack_assessment_agent`
-**External APIs:** adsbdb, adsb.lol, Reuters (RapidAPI)
+**External APIs:** adsbdb, adsb.lol, GNews
 **Connector:** Slack webhook
 **Tags:** `adsb`, `squawk-7500`, `hijack`, `alert`, `ai`, `cases`
 
@@ -170,11 +170,11 @@ flowchart TD
     Resolve --> History["5. flight_history\n6 h position history\nfrom Elasticsearch"]
     History --> adsbdb["6a. adsbdb_lookup\nAircraft metadata +\nexpected route"]
     History --> adsblol["6b. adsblol_lookup\nLive position\ncross-reference"]
-    History --> Reuters["6c. reuters_search\nNews search for\ncallsign + hijack"]
+    History --> GNewsStep["6c. news_search\nNews search for\ncallsign + hijack"]
 
     adsbdb --> AI["7. ai_assessment\nHijack Assessment Analyst\nreturns GENUINE or\nFALSE_POSITIVE"]
     adsblol --> AI
-    Reuters --> AI
+    GNewsStep --> AI
 
     AI --> UpdateCase["8. update_case_enrichment\nPost assessment +\ndata-source summary\nto Kibana case"]
 
@@ -198,8 +198,8 @@ flowchart TD
 6. **External enrichment** (three HTTP calls, each with `on-failure: continue`):
    - **adsbdb_lookup** -- aircraft registry metadata and expected flight route.
    - **adsblol_lookup** -- independent live-position cross-reference.
-   - **reuters_search** -- news articles mentioning the callsign and "hijack"
-     (requires `RAPIDAPI_KEY`).
+   - **news_search** -- news articles mentioning the callsign and "hijack"
+     (requires `GNEWS_API_KEY`).
 7. **ai_assessment** -- sends all enrichment data to the Hijack Assessment
    Analyst agent, which returns a structured verdict (`[GENUINE]` or
    `[FALSE_POSITIVE]`) with confidence and reasoning.
@@ -216,7 +216,7 @@ ______________________________________________________________________
 **File:** `squawk-7500-enrich.yaml`
 **Trigger:** manual (registered as a workflow tool for the Hijack Assessment Analyst)
 **Index:** `demos-aircraft-adsb`
-**External APIs:** adsbdb, adsb.lol, Reuters (RapidAPI)
+**External APIs:** adsbdb, adsb.lol, GNews
 **Tags:** `adsb`, `squawk-7500`, `enrichment`
 
 A utility workflow that gathers all enrichment data for a given aircraft. It is
@@ -237,13 +237,13 @@ flowchart TD
     Trigger --> Latest["2. latest_position\nMost recent snapshot"]
     Trigger --> adsbdb["3. adsbdb_lookup\nAircraft metadata + route"]
     Trigger --> adsblol["4. adsblol_lookup\nLive position cross-reference"]
-    Trigger --> Reuters["5. reuters_search\nNews search"]
+    Trigger --> GNews["5. news_search\nNews search"]
 
     History --> Output["Combined\nenrichment output"]
     Latest --> Output
     adsbdb --> Output
     adsblol --> Output
-    Reuters --> Output
+    GNews --> Output
 ```
 
 ______________________________________________________________________

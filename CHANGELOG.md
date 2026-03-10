@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-03-10
+
+### Changed
+
+- **News API replaced** — switched from defunct Reuters/RapidAPI endpoint (returning 404) to [GNews](https://gnews.io) across hijack investigation and enrichment workflows, `setup.sh`, agent instructions, and all documentation
+- **`GNEWS_API_KEY`** replaces `RAPIDAPI_KEY` in `.env.example` — free tier provides 100 req/day with 12-hour article delay; news correlation step skips gracefully when unset
+- **Workflow step renamed** — `reuters_search` → `news_search` in both `squawk-7500-hijack-investigation.yaml` and `squawk-7500-enrich.yaml`; HTTP headers block removed (GNews uses query-string auth)
+
 ## [1.2.0] - 2026-03-10
 
 ### Added
@@ -40,14 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Squawk 7500 hijack detection pipeline** — end-to-end automated response when a transponder broadcasts squawk 7500 (hijack):
   - **Alerting rule** — ES query rule checks `demos-aircraft-adsb` every 5 minutes for `squawk: "7500"` events; created idempotently by `setup.sh`
-  - **Enrichment workflow** (`squawk-7500-enrich.yaml`) — fetches aircraft metadata from adsbdb, live position from adsb.lol, and correlated news from Reuters via RapidAPI
+  - **Enrichment workflow** (`squawk-7500-enrich.yaml`) — fetches aircraft metadata from adsbdb, live position from adsb.lol, and correlated news from GNews
   - **Investigation workflow** (`squawk-7500-hijack-investigation.yaml`) — orchestrates enrichment, AI assessment, case creation, and optional Slack notification
   - **Case creation workflow** (`squawk-7500-create-case.yaml`) — creates or updates a Kibana Security case tagged `squawk-7500` with verdict tags (`verdict:genuine` / `verdict:false_positive`)
   - **Cases summary workflow** (`hijack-cases-summary.yaml`) — retrieves squawk 7500 investigation cases from Kibana case management for briefing integration
 - **Hijack assessment agent** (`adsb-hijack-assessment-agent.json`) — AI agent that evaluates squawk 7500 events using enriched context (aircraft history, live position, news correlation) and renders a structured verdict
 - **Agent documentation** (`elasticsearch/agents/README.md`) — architecture, deployment, and testing guide for all AI agents
 - **Workflow documentation** (`elasticsearch/workflows/README.md`) — reference for all workflows including triggers, inputs, side effects, and deployment
-- **`RAPIDAPI_KEY`** environment variable in `.env.example` for Reuters news search in the hijack investigation workflow
+- **`GNEWS_API_KEY`** environment variable in `.env.example` for GNews news search in the hijack investigation workflow
 - **Makefile deploy targets** — granular `deploy-indices`, `deploy-enrich`, `deploy-pipelines`, `deploy-kibana`, `deploy-workflows`, `deploy-agents`, `deploy-es`, `deploy-ai`, `redeploy` targets with `FORCE=1` support
 - **Makefile diagnostics** — `validate`, `health`, `ps`, `shell` targets
 - **Make Targets** reference section in README with tables for all target groups
@@ -166,4 +174,5 @@ Kibana dashboards.
 [1.0.0]: https://github.com/face0b1101/adsb-demo/compare/v0.3.0...v1.0.0
 [1.1.0]: https://github.com/face0b1101/adsb-demo/compare/v1.0.0...v1.1.0
 [1.2.0]: https://github.com/face0b1101/adsb-demo/compare/v1.1.0...v1.2.0
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.2.0...HEAD
+[1.2.1]: https://github.com/face0b1101/adsb-demo/compare/v1.2.0...v1.2.1
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.2.1...HEAD

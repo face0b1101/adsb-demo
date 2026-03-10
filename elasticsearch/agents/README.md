@@ -189,7 +189,7 @@ build an evidence-based assessment.
 | --------------------------------------------- | ----------------------------------------------------- |
 | `platform.core.search`                        | Ad-hoc queries against ADS-B data                     |
 | `platform.core.get_workflow_execution_status` | Poll workflow completion                              |
-| `squawk-7500-enrich`                          | Gather flight history, adsbdb, adsb.lol, Reuters data |
+| `squawk-7500-enrich`                          | Gather flight history, adsbdb, adsb.lol, GNews data   |
 | `squawk-7500-create-case`                     | Create or update a Kibana case with the verdict       |
 
 ### Operating modes
@@ -237,7 +237,7 @@ The agent considers these factors in order of importance:
    abnormal speed variations in the 6-hour flight history.
 4. **Independent confirmation** -- whether adsb.lol independently shows squawk
    7500, or if only local receivers see it (possible receiver artefact).
-5. **News corroboration** -- Reuters articles mentioning the flight or a hijack
+5. **News corroboration** -- GNews articles mentioning the flight or a hijack
    event provide strong evidence.
 6. **Aircraft type and operator** -- commercial airline flights receive higher
    scrutiny than small private or training aircraft.

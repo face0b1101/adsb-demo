@@ -172,7 +172,7 @@ Some workflows trigger real external actions when run:
 | --- | --- |
 | `adsb-aggregate-stats` | None (read-only ES query) |
 | `daily-flight-briefing` | Sends Slack message, invokes AI agent |
-| `squawk-7500-enrich` | External HTTP calls (adsbdb, adsb.lol, Reuters) |
+| `squawk-7500-enrich` | External HTTP calls (adsbdb, adsb.lol, GNews) |
 | `squawk-7500-hijack-investigation` | Creates Kibana case, may send Slack |
 | `squawk-7500-create-case` | Creates or updates a Kibana case |
 

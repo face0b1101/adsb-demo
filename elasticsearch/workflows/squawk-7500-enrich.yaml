@@ -2,7 +2,7 @@ name: Squawk 7500 Enrich
 description: >-
   Gathers enrichment data for a squawk 7500 investigation — flight history
   from Elasticsearch, aircraft metadata and expected route from adsbdb, live
-  position cross-reference from adsb.lol, and news search from Reuters.
+  position cross-reference from adsb.lol, and news search from GNews.
   Designed as a workflow tool for the hijack assessment agent.
 enabled: true
 tags: ["adsb", "squawk-7500", "enrichment"]
@@ -87,15 +87,12 @@ steps:
       continue: true
 
   # ------------------------------------------------------------------
-  # 5. Reuters — news search (optional, needs RAPIDAPI_KEY)
+  # 5. GNews — news search (optional, needs GNEWS_API_KEY)
   # ------------------------------------------------------------------
-  - name: reuters_search
+  - name: news_search
     type: http
     with:
-      url: "https://reuters-api.p.rapidapi.com/search?keywordName={{ inputs.callsign }}%20hijack&limit=5"
+      url: "https://gnews.io/api/v4/search?q={{ inputs.callsign }}%20hijack&max=5&apikey=__GNEWS_API_KEY__"
       method: GET
-      headers:
-        x-rapidapi-key: "__RAPIDAPI_KEY__"
-        x-rapidapi-host: "reuters-api.p.rapidapi.com"
     on-failure:
       continue: true

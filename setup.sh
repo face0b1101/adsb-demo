@@ -863,7 +863,7 @@ setup_workflows() {
   local _hijack_yaml_content _hijack_name
   _hijack_yaml_content=$(sed \
     -e "s|__KB_ENDPOINT__|${KB_BASE}|g" \
-    -e "s|__RAPIDAPI_KEY__|${RAPIDAPI_KEY:-}|g" \
+    -e "s|__GNEWS_API_KEY__|${GNEWS_API_KEY:-}|g" \
     -e "s|__SPACE_PREFIX__|${_space_prefix}|g" \
     -e "s|__SLACK_CONNECTOR_ID__|${SLACK_CONNECTOR_ID:-}|g" \
     "elasticsearch/workflows/squawk-7500-hijack-investigation.yaml")
@@ -949,7 +949,7 @@ setup_workflows() {
 
   local enrich_yaml
   local _enrich_yaml_content _enrich_name
-  _enrich_yaml_content=$(sed -e "s|__RAPIDAPI_KEY__|${RAPIDAPI_KEY:-}|g" \
+  _enrich_yaml_content=$(sed -e "s|__GNEWS_API_KEY__|${GNEWS_API_KEY:-}|g" \
     "elasticsearch/workflows/squawk-7500-enrich.yaml")
   _enrich_name=$(echo "$_enrich_yaml_content" | grep -m1 '^name:' | sed 's/^name:[[:space:]]*//')
   enrich_yaml=$(echo "$_enrich_yaml_content" | jq -Rs '{yaml: .}')
@@ -1027,7 +1027,7 @@ setup_workflows() {
   rm -f "$enrich_tmp"
 
   register_wf_tool "squawk-7500-enrich" "${enrich_wf_id:-}" \
-    $'Gathers enrichment data for a squawk 7500 investigation \u2014 flight history from Elasticsearch, aircraft metadata and route from adsbdb, live position from adsb.lol, and Reuters news search.\n\nInputs:\n- icao24 (required string): ICAO 24-bit aircraft address\n- callsign (optional string): flight callsign\n\nReturns step outputs: flight_history (ES search), latest_position (ES search), adsbdb_lookup (HTTP), adsblol_lookup (HTTP), reuters_search (HTTP).\n\nThis is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
+    $'Gathers enrichment data for a squawk 7500 investigation \u2014 flight history from Elasticsearch, aircraft metadata and route from adsbdb, live position from adsb.lol, and GNews news search.\n\nInputs:\n- icao24 (required string): ICAO 24-bit aircraft address\n- callsign (optional string): flight callsign\n\nReturns step outputs: flight_history (ES search), latest_position (ES search), adsbdb_lookup (HTTP), adsblol_lookup (HTTP), news_search (HTTP).\n\nThis is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
     '["adsb", "squawk-7500", "enrichment"]'
 
   # --- Deploy squawk 7500 create-case workflow ---
