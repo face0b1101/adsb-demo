@@ -7,6 +7,20 @@ description: >-
 enabled: true
 tags: ["adsb", "squawk-7500", "enrichment"]
 
+outputs:
+  flight_history:
+    value: "${{ steps.flight_history.output }}"
+  latest_position:
+    value: "${{ steps.latest_position.output }}"
+  adsbdb_aircraft:
+    value: "${{ steps.adsbdb_aircraft.output }}"
+  adsbdb_route:
+    value: "${{ steps.adsbdb_route.output }}"
+  adsblol_lookup:
+    value: "${{ steps.adsblol_lookup.output }}"
+  news_search:
+    value: "${{ steps.news_search.output }}"
+
 consts:
   indexName: "demos-aircraft-adsb"
   historyWindow: "now-6h"

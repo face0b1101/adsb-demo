@@ -6,6 +6,10 @@ description: >-
 enabled: true
 tags: ["adsb", "aggregation"]
 
+outputs:
+  aggregations:
+    value: "${{ steps.aggregate_stats.output }}"
+
 consts:
   indexName: "demos-aircraft-adsb"
   lookbackWindow: "now-24h"

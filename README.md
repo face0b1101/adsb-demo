@@ -69,6 +69,8 @@ The setup script deploys several [Elastic Workflows](https://www.elastic.co/docs
 
 Supporting workflows (`squawk-7500-enrich`, `squawk-7500-create-case`, `hijack-cases-summary`, `adsb-aggregate-stats`) are deployed as agent tools.
 
+> **Known limitation (Stack 9.3.x)** — Elastic Workflows is a Preview feature, and behaviour may differ between deployment types. Workflow `outputs` are not yet functional on Elastic Stack / Cloud Hosted 9.3.x. Agent-tool workflows include `outputs` sections but the runtime ignores them, so agents receive `null` output and fall back to direct ES queries. External enrichment data (adsbdb, adsb.lol, GNews) is unavailable in the interactive chat path on affected deployments. This works correctly on Elastic Cloud Serverless. See [#9](https://github.com/face0b1101/adsb-demo/issues/9) for tracking.
+
 > **Observability features** — This demo leverages Elastic Observability capabilities including the Observability solution view (Kibana space), Cases (`owner: observability`), and alerting (`consumer: observability`). The full experience requires a deployment that supports these features — see the [deployment comparison table](#getting-started-with-elasticsearch).
 
 **Prerequisites for workflows and agents:**

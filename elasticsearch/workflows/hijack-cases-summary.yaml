@@ -6,6 +6,10 @@ description: >-
 enabled: true
 tags: ["adsb", "squawk-7500", "cases", "briefing"]
 
+outputs:
+  cases:
+    value: "${{ steps.fetch_cases.output }}"
+
 triggers:
   - type: manual
 

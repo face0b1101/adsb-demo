@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-03-13
+
+### Added
+
+- **Workflow `outputs` sections** for four agent-tool workflows (`squawk-7500-enrich`, `adsb-aggregate-stats`, `hijack-cases-summary`, `squawk-7500-create-case`) — maps step outputs to execution-level output fields using `${{ }}` syntax; forward-compatible with future Stack releases (currently non-functional on Stack 9.3.x, works on Elastic Cloud Serverless)
+- **Bug report templates** (`.github/bug-reports/`) — documented two Kibana API quirks for upstream reporting: `lastExecution` always `null` on Workflows API, and Cases `_find` `tags` parameter using OR logic
+
+### Changed
+
+- **Known Quirks** expanded in `AGENTS.md` — added item #4 documenting workflow `outputs` limitation on Stack 9.3.x
+- **README** — added known limitation note for workflow `outputs` on Stack 9.3.x referencing tracking issue [#9](https://github.com/face0b1101/adsb-demo/issues/9), noting Elastic Workflows is a Preview feature
+- **Kibana saved objects** re-exported to pick up latest changes
+
 ## [1.4.3] - 2026-03-13
 
 ### Fixed
@@ -236,4 +249,5 @@ Kibana dashboards.
 [1.4.1]: https://github.com/face0b1101/adsb-demo/compare/v1.4.0...v1.4.1
 [1.4.2]: https://github.com/face0b1101/adsb-demo/compare/v1.4.1...v1.4.2
 [1.4.3]: https://github.com/face0b1101/adsb-demo/compare/v1.4.2...v1.4.3
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.4.3...HEAD
+[1.4.4]: https://github.com/face0b1101/adsb-demo/compare/v1.4.3...v1.4.4
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.4.4...HEAD

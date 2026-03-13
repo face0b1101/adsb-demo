@@ -8,6 +8,12 @@ description: >-
 enabled: true
 tags: ["adsb", "squawk-7500", "cases"]
 
+outputs:
+  existing_case_search:
+    value: "${{ steps.find_existing_case.output }}"
+  created_case:
+    value: "${{ steps.create_case.output }}"
+
 inputs:
   - name: icao24
     type: string
