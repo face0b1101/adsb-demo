@@ -230,7 +230,7 @@ steps:
         :airplane: *Daily ADS-B Flight Briefing*
         _Generated {{ execution.startedAt }}_
 
-        {{ steps.generate_briefing.output }}
+        {{ steps.generate_briefing.output.message }}
 
         :bar_chart: <__KB_ENDPOINT__/app/dashboards#/view/__DASHBOARD_WORLD_OVERVIEW_ID__?_g=(filters:!(),refreshInterval:(pause:!t,value:60000),time:(from:now-24h,to:now))|Open Dashboard>
         :open_file_folder: <__KB_ENDPOINT__/app/observability/cases|Open Cases>

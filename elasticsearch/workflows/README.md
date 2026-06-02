@@ -542,7 +542,7 @@ always-write patterns instead of check-before-write.
 
 ### Passing step data to agents
 
-Workflow `outputs` are not functional on Stack 9.3.x (quirk #4). Two patterns
+Workflow `outputs` are not functional on Stack 9.3.x-9.4.x (quirk #4). Two patterns
 for getting external data to agents:
 
 1. **`ai.agent` step** (for autonomous workflows) — assemble all step outputs
@@ -553,3 +553,10 @@ for getting external data to agents:
    index via `elasticsearch.request` PUT, then tell the agent to query the
    cache index as a fallback. Used by `adsb-aircraft-history` and
    `squawk-7500-enrich`.
+
+### Consuming `ai.agent` step output
+
+From Kibana 9.4.2 the `ai.agent` step returns an object `{message: string}`,
+not a plain string. Reference `{{ steps.X.output.message }}` in templates and
+`steps.X.output.message contains '...'` in conditions. Plain `{{ steps.X.output }}`
+renders as `[object Object]` and `contains` checks always evaluate false.

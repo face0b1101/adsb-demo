@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`adsb-automation` ILM `forcemerge` on frozen searchable snapshots:** extended the service role with `fm-clone-*` (`manage`, `view_index_metadata`) so ILM can complete the temporary clone step used before snapshots on Elasticsearch 9.2+ when the lifecycle policy was last updated by that user
+- **`ai.agent` step output shape changed in Kibana 9.4.2** — the step now returns an object `{message: string}` instead of a plain string, causing `[object Object]` to be posted to Slack by the Daily Flight Briefing and silently breaking triage routing in the Squawk 7500 Hijack Investigation; updated both workflows to reference `steps.<step>.output.message`
+- **Workflows REST API paths changed in Kibana 9.4.x** — single-workflow endpoints gained a `workflow/` path segment and `POST /api/workflows/search` was removed; updated all 46 workflow API calls in `setup.sh` and the API reference snippets in `AGENTS.md` so deployment works on 9.4.x
 
 ## [1.10.1] - 2026-04-10
 

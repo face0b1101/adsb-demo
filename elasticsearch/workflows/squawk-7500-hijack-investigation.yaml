@@ -249,7 +249,7 @@ steps:
             type: user
             owner: observability
             comment: |
-              {{ steps.ai_assessment.output }}
+              {{ steps.ai_assessment.output.message }}
 
               ---
 
@@ -276,18 +276,19 @@ steps:
       #     Cases are never auto-closed; a human reviews and closes.
       #
       #     Confidence is extracted via nested contains checks because
-      #     ai.agent output is a plain string (not parsed as JSON).
+      #     ai.agent output is an object {message: string} from 9.4.2+.
+      #     Access via steps.ai_assessment.output.message for string ops.
       #     Matches **Confidence:** `high` / `medium`, else defaults
       #     to low. PATCH replaces the entire customFields array, so
       #     all fields must be included in every PATCH body.
       # ----------------------------------------------------------------
       - name: route_triage
         type: if
-        condition: "${{ steps.ai_assessment.output contains '**AI Triage Assessment:** `genuine`' }}"
+        condition: "${{ steps.ai_assessment.output.message contains '**AI Triage Assessment:** `genuine`' }}"
         steps:
           - name: confidence_genuine
             type: if
-            condition: "${{ steps.ai_assessment.output contains '**Confidence:** `high`' }}"
+            condition: "${{ steps.ai_assessment.output.message contains '**Confidence:** `high`' }}"
             steps:
               - name: tag_genuine_high
                 type: kibana.request
@@ -321,7 +322,7 @@ steps:
             else:
               - name: confidence_genuine_not_high
                 type: if
-                condition: "${{ steps.ai_assessment.output contains '**Confidence:** `medium`' }}"
+                condition: "${{ steps.ai_assessment.output.message contains '**Confidence:** `medium`' }}"
                 steps:
                   - name: tag_genuine_medium
                     type: kibana.request
@@ -395,7 +396,7 @@ steps:
                 *Position:* {{ event.alerts[0].kibana.alert.grouping.latitude }}, {{ event.alerts[0].kibana.alert.grouping.longitude }}
                 *Altitude:* {{ event.alerts[0].kibana.alert.grouping.baro_altitude }}m
 
-                {{ steps.ai_assessment.output }}
+                {{ steps.ai_assessment.output.message }}
 
                 :open_file_folder: <__KB_ENDPOINT__/app/observability/cases/{{ steps.create_case.output.id }}|Open Case>
                 :bar_chart: <__KB_ENDPOINT__/app/dashboards#/view/__DASHBOARD_AIRCRAFT_DETAIL_ID__?_g=(time:(from:now-6h,to:now))&_a=(filters:!((query:(match_phrase:(icao24:'{{ event.alerts[0].kibana.alert.grouping.icao24 }}')))))|Aircraft Detail Dashboard>
@@ -404,7 +405,7 @@ steps:
         else:
           - name: confidence_fp
             type: if
-            condition: "${{ steps.ai_assessment.output contains '**Confidence:** `high`' }}"
+            condition: "${{ steps.ai_assessment.output.message contains '**Confidence:** `high`' }}"
             steps:
               - name: tag_fp_high
                 type: kibana.request
@@ -438,7 +439,7 @@ steps:
             else:
               - name: confidence_fp_not_high
                 type: if
-                condition: "${{ steps.ai_assessment.output contains '**Confidence:** `medium`' }}"
+                condition: "${{ steps.ai_assessment.output.message contains '**Confidence:** `medium`' }}"
                 steps:
                   - name: tag_fp_medium
                     type: kibana.request

@@ -962,9 +962,7 @@ setup_workflows() {
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -X POST "$KB_BASE/api/workflows/search" \
-    -d '{"query":"Squawk 7500 Hijack Investigation"}' 2>/dev/null | grep -q '^2'; then
+    "$KB_BASE/api/workflows" 2>/dev/null | grep -q '^2'; then
     hijack_wf_id_for_rule=$(jq -r '(.workflows // .results // [])[] | select(.name == "Squawk 7500 Hijack Investigation") | .id' < "$_pre_wf_tmp" 2>/dev/null | head -1 || true)
   fi
   rm -f "$_pre_wf_tmp"
@@ -1074,11 +1072,9 @@ setup_workflows() {
   local wf_search_http existing_wf_id=""
   wf_search_http=$(curl -s -w '%{http_code}' -o "$wf_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "Daily Flight Briefing", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$wf_search_http" -ge 200 && "$wf_search_http" -lt 300 ]]; then
     existing_wf_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "Daily Flight Briefing") | .id' < "$wf_tmp" 2>/dev/null | head -1 || true)
@@ -1090,14 +1086,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       wf_http=$(curl -s -w '%{http_code}' -o "$wf_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_wf_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_wf_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$workflow_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_wf_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_wf_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1109,7 +1105,7 @@ setup_workflows() {
   else
     wf_http=$(curl -s -w '%{http_code}' -o "$wf_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1130,7 +1126,7 @@ setup_workflows() {
     if [[ -z "$existing_wf_id" && -n "$wf_id" ]]; then
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$wf_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$wf_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1164,11 +1160,9 @@ setup_workflows() {
   local hijack_search_http existing_hijack_id=""
   hijack_search_http=$(curl -s -w '%{http_code}' -o "$hijack_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "Squawk 7500 Hijack Investigation", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$hijack_search_http" -ge 200 && "$hijack_search_http" -lt 300 ]]; then
     existing_hijack_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "Squawk 7500 Hijack Investigation") | .id' < "$hijack_tmp" 2>/dev/null | head -1 || true)
@@ -1180,14 +1174,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       hijack_http=$(curl -s -w '%{http_code}' -o "$hijack_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_hijack_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_hijack_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$hijack_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_hijack_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_hijack_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1199,7 +1193,7 @@ setup_workflows() {
   else
     hijack_http=$(curl -s -w '%{http_code}' -o "$hijack_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1220,7 +1214,7 @@ setup_workflows() {
     if [[ -z "$existing_hijack_id" && -n "$hijack_wf_id" ]]; then
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$hijack_wf_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$hijack_wf_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1300,11 +1294,9 @@ setup_workflows() {
   local enrich_search_http existing_enrich_id=""
   enrich_search_http=$(curl -s -w '%{http_code}' -o "$enrich_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "Squawk 7500 Enrich", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$enrich_search_http" -ge 200 && "$enrich_search_http" -lt 300 ]]; then
     existing_enrich_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "Squawk 7500 Enrich") | .id' < "$enrich_tmp" 2>/dev/null | head -1 || true)
@@ -1316,14 +1308,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       enrich_http=$(curl -s -w '%{http_code}' -o "$enrich_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_enrich_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_enrich_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$enrich_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_enrich_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_enrich_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1334,7 +1326,7 @@ setup_workflows() {
   else
     enrich_http=$(curl -s -w '%{http_code}' -o "$enrich_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1354,7 +1346,7 @@ setup_workflows() {
     if [[ -z "$existing_enrich_id" && -n "$enrich_wf_id" ]]; then
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$enrich_wf_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$enrich_wf_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1386,11 +1378,9 @@ setup_workflows() {
   local case_search_http existing_case_id=""
   case_search_http=$(curl -s -w '%{http_code}' -o "$case_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "Squawk 7500 Create Case", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$case_search_http" -ge 200 && "$case_search_http" -lt 300 ]]; then
     existing_case_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "Squawk 7500 Create Case") | .id' < "$case_tmp" 2>/dev/null | head -1 || true)
@@ -1402,14 +1392,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       case_http=$(curl -s -w '%{http_code}' -o "$case_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_case_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_case_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$case_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_case_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_case_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1420,7 +1410,7 @@ setup_workflows() {
   else
     case_http=$(curl -s -w '%{http_code}' -o "$case_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1440,7 +1430,7 @@ setup_workflows() {
     if [[ -z "$existing_case_id" && -n "$case_wf_id" ]]; then
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$case_wf_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$case_wf_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1471,11 +1461,9 @@ setup_workflows() {
   local agg_search_http existing_agg_id=""
   agg_search_http=$(curl -s -w '%{http_code}' -o "$agg_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "ADS-B Aggregate Stats", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$agg_search_http" -ge 200 && "$agg_search_http" -lt 300 ]]; then
     existing_agg_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "ADS-B Aggregate Stats") | .id' < "$agg_tmp" 2>/dev/null | head -1 || true)
@@ -1487,14 +1475,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       agg_http=$(curl -s -w '%{http_code}' -o "$agg_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_agg_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_agg_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$agg_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_agg_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_agg_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1511,7 +1499,7 @@ setup_workflows() {
   else
     agg_http=$(curl -s -w '%{http_code}' -o "$agg_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1531,7 +1519,7 @@ setup_workflows() {
   if [[ -z "$existing_agg_id" && -n "$agg_wf_id" ]]; then
     warn_on_fail "Setting workflow name" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X PUT "$KB_BASE/api/workflows/$agg_wf_id" \
+      -X PUT "$KB_BASE/api/workflows/workflow/$agg_wf_id" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1562,11 +1550,9 @@ setup_workflows() {
   local hist_search_http existing_hist_id=""
   hist_search_http=$(curl -s -w '%{http_code}' -o "$hist_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "ADS-B Aircraft History Report", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$hist_search_http" -ge 200 && "$hist_search_http" -lt 300 ]]; then
     existing_hist_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "ADS-B Aircraft History Report") | .id' < "$hist_tmp" 2>/dev/null | head -1 || true)
@@ -1578,14 +1564,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       hist_http=$(curl -s -w '%{http_code}' -o "$hist_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_hist_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_hist_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$hist_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_hist_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_hist_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1602,7 +1588,7 @@ setup_workflows() {
   else
     hist_http=$(curl -s -w '%{http_code}' -o "$hist_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1622,7 +1608,7 @@ setup_workflows() {
   if [[ -z "$existing_hist_id" && -n "$hist_wf_id" ]]; then
     warn_on_fail "Setting workflow name" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X PUT "$KB_BASE/api/workflows/$hist_wf_id" \
+      -X PUT "$KB_BASE/api/workflows/workflow/$hist_wf_id" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1653,11 +1639,9 @@ setup_workflows() {
   local arpt_search_http existing_arpt_id=""
   arpt_search_http=$(curl -s -w '%{http_code}' -o "$arpt_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "ADS-B Airport Activity Report", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$arpt_search_http" -ge 200 && "$arpt_search_http" -lt 300 ]]; then
     existing_arpt_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "ADS-B Airport Activity Report") | .id' < "$arpt_tmp" 2>/dev/null | head -1 || true)
@@ -1669,14 +1653,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       arpt_http=$(curl -s -w '%{http_code}' -o "$arpt_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_arpt_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_arpt_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$arpt_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_arpt_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_arpt_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1692,7 +1676,7 @@ setup_workflows() {
   else
     arpt_http=$(curl -s -w '%{http_code}' -o "$arpt_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1715,7 +1699,7 @@ setup_workflows() {
     if [[ -z "$existing_arpt_id" && -n "$arpt_wf_id" ]]; then
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$arpt_wf_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$arpt_wf_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1747,11 +1731,9 @@ setup_workflows() {
   local hcs_search_http existing_hcs_id=""
   hcs_search_http=$(curl -s -w '%{http_code}' -o "$hcs_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "Hijack Cases Summary", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$hcs_search_http" -ge 200 && "$hcs_search_http" -lt 300 ]]; then
     existing_hcs_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "Hijack Cases Summary") | .id' < "$hcs_tmp" 2>/dev/null | head -1 || true)
@@ -1763,14 +1745,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       hcs_http=$(curl -s -w '%{http_code}' -o "$hcs_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_hcs_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_hcs_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$hcs_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_hcs_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_hcs_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1787,7 +1769,7 @@ setup_workflows() {
   else
     hcs_http=$(curl -s -w '%{http_code}' -o "$hcs_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1807,7 +1789,7 @@ setup_workflows() {
   if [[ -z "$existing_hcs_id" && -n "$hcs_wf_id" ]]; then
     warn_on_fail "Setting workflow name" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X PUT "$KB_BASE/api/workflows/$hcs_wf_id" \
+      -X PUT "$KB_BASE/api/workflows/workflow/$hcs_wf_id" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1837,11 +1819,9 @@ setup_workflows() {
   local dcd_search_http existing_dcd_id=""
   dcd_search_http=$(curl -s -w '%{http_code}' -o "$dcd_tmp" \
     -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-    -X POST "$KB_BASE/api/workflows/search" \
     -H "kbn-xsrf: true" \
     -H "x-elastic-internal-origin: kibana" \
-    -H "Content-Type: application/json" \
-    -d '{"query": "Defunct Callsign Detector", "limit": 1}')
+    "$KB_BASE/api/workflows")
 
   if [[ "$dcd_search_http" -ge 200 && "$dcd_search_http" -lt 300 ]]; then
     existing_dcd_id=$(jq -r '(.workflows // .results // [])[] | select(.name == "Defunct Callsign Detector") | .id' < "$dcd_tmp" 2>/dev/null | head -1 || true)
@@ -1853,14 +1833,14 @@ setup_workflows() {
       echo "  Workflow exists — updating (--force)"
       dcd_http=$(curl -s -w '%{http_code}' -o "$dcd_tmp" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_dcd_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_dcd_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
         -d "$dcd_yaml")
       warn_on_fail "Setting workflow name" \
         -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-        -X PUT "$KB_BASE/api/workflows/$existing_dcd_id" \
+        -X PUT "$KB_BASE/api/workflows/workflow/$existing_dcd_id" \
         -H "kbn-xsrf: true" \
         -H "x-elastic-internal-origin: kibana" \
         -H "Content-Type: application/json" \
@@ -1877,7 +1857,7 @@ setup_workflows() {
   else
     dcd_http=$(curl -s -w '%{http_code}' -o "$dcd_tmp" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X POST "$KB_BASE/api/workflows" \
+      -X POST "$KB_BASE/api/workflows/workflow" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
@@ -1897,7 +1877,7 @@ setup_workflows() {
   if [[ -z "$existing_dcd_id" && -n "$dcd_wf_id" ]]; then
     warn_on_fail "Setting workflow name" \
       -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
-      -X PUT "$KB_BASE/api/workflows/$dcd_wf_id" \
+      -X PUT "$KB_BASE/api/workflows/workflow/$dcd_wf_id" \
       -H "kbn-xsrf: true" \
       -H "x-elastic-internal-origin: kibana" \
       -H "Content-Type: application/json" \
