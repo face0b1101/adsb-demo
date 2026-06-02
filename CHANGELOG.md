@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.3] - 2026-06-02
+
+### Changed
+
+- **AGENTS.md** — moved Known Quirks, Testing via API, and Elastic Skills & MCP Servers sections out to `docs/` to reduce always-loaded token count; stubs with links remain in `AGENTS.md`
+- **docs/known-quirks.md** — new file; all 12 platform quirks for workflows, cases, ILM, and alert rules
+- **docs/testing-api.md** — new file; curl patterns for ES queries, workflows, agents, and side-effect table
+- **docs/elastic-skills-mcp.md** — new file; skill categories, MCP server usage, and precedence rules
+
 ## [1.10.2] - 2026-06-02
 
 ### Fixed
@@ -442,4 +451,5 @@ Kibana dashboards.
 [1.10.0]: https://github.com/face0b1101/adsb-demo/compare/v1.9.3...v1.10.0
 [1.10.1]: https://github.com/face0b1101/adsb-demo/compare/v1.10.0...v1.10.1
 [1.10.2]: https://github.com/face0b1101/adsb-demo/compare/v1.10.1...v1.10.2
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.10.2...HEAD
+[1.10.3]: https://github.com/face0b1101/adsb-demo/compare/v1.10.2...v1.10.3
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.10.3...HEAD

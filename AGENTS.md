@@ -53,42 +53,7 @@ ______________________________________________________________________
 
 ## Elastic Skills & MCP Servers
 
-This project relies heavily on Elasticsearch, Kibana, and Elastic Cloud APIs.
-Before starting any Elastic-related task, **check for available agent skills
-and MCP servers** — they contain up-to-date API patterns, best practices, and
-tooling that will improve the quality of your output.
-
-### Skills
-
-Look for installed Elastic skills covering Elasticsearch, Kibana, Cloud,
-Observability, and Security. Skills are self-describing — read their
-`SKILL.md` to understand scope and activation triggers. Relevant skill
-categories for this project include:
-
-- **Elasticsearch** — REST API patterns, Query DSL, ES|QL, index management,
-  ingest pipelines, auth, RBAC, troubleshooting
-- **Kibana** — dashboards, alerting rules, connectors, Agent Builder, Workflows,
-  Streams, Vega visualisations
-- **Cloud** — project provisioning, API keys, network security
-- **Observability** — SLOs, logs, EDOT instrumentation
-- **Security** — detection rules, alert triage, case management
-
-If a skill exists for the task at hand, read and follow it before falling back
-to general knowledge.
-
-### MCP servers
-
-An **Elastic Docs** MCP server may be available (via IDE marketplace plugin or
-user configuration). It provides tools to search and retrieve Elastic product
-documentation published at elastic.co/docs. Prefer its `search_docs` tool over
-a general web search for any Elastic-specific query.
-
-### Precedence
-
-When sources overlap, prefer **project-specific conventions** in this file
-(e.g. `ES_API_KEY_ENCODED`, `KB_BASE`, workflow YAML patterns), then
-**skills** for canonical API reference and best practices, then the **MCP docs
-server** for latest documentation lookups.
+See [docs/elastic-skills-mcp.md](docs/elastic-skills-mcp.md) — skill categories, MCP server usage, and precedence rules.
 
 ______________________________________________________________________
 
@@ -117,127 +82,13 @@ ______________________________________________________________________
 
 ## Testing via API
 
-After editing workflows (`elasticsearch/workflows/`), agents (`elasticsearch/agents/`),
-or aggregation queries, validate changes via the Elasticsearch and Kibana REST APIs.
-All commands require `required_permissions: ["all"]` in sandboxed environments.
-
-### Prerequisites
-
-```sh
-source .env   # provides ES_ENDPOINT, KB_ENDPOINT, ES_API_KEY_ENCODED
-
-# Space-aware Kibana base URL (all Kibana API calls must use KB_BASE)
-KB_BASE="${KB_ENDPOINT%/}"
-[[ -n "${KB_SPACE:-}" ]] && KB_BASE="${KB_BASE}/s/${KB_SPACE}"
-```
-
-### Redeploy changed resources
-
-```sh
-./setup.sh --only agents,workflows --force
-```
-
-### Test an Elasticsearch query
-
-Run the query body directly against ES to validate aggregations, painless scripts, and
-mappings before deploying a workflow.
-
-```sh
-curl -s "${ES_ENDPOINT}/demos-aircraft-adsb/_search" \
-  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
-  -H "Content-Type: application/json" \
-  -d '{"size":0,"query":{...},"aggs":{...}}' | jq '.aggregations'
-```
-
-### Test a workflow
-
-The Kibana Workflows API (Technical Preview) requires the extra header
-`x-elastic-internal-origin: kibana` on every request.
-
-```sh
-# 1. Find workflow ID by name (list endpoint unchanged)
-WF_ID=$(curl -s "${KB_BASE}/api/workflows" \
-  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
-  -H "kbn-xsrf: true" \
-  -H "x-elastic-internal-origin: kibana" \
-  | jq -r '.results[] | select(.name=="My Workflow Name") | .id')
-
-# 2. Run — NOTE: path changed in 9.4.x, now requires "workflow/" segment
-EXEC_ID=$(curl -s -X POST "${KB_BASE}/api/workflows/workflow/${WF_ID}/run" \
-  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
-  -H "kbn-xsrf: true" \
-  -H "x-elastic-internal-origin: kibana" \
-  -H "Content-Type: application/json" \
-  -d '{"inputs":{}}' | jq -r '.workflowExecutionId')
-
-# 3. Poll until status is "completed" or "failed"
-curl -s "${KB_BASE}/api/workflows/executions/${EXEC_ID}" \
-  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
-  -H "kbn-xsrf: true" \
-  -H "x-elastic-internal-origin: kibana" \
-  | jq '{status, duration, steps: [.stepExecutions[]? | {type: .stepType, status: .status}]}'
-
-# 4. Inspect individual step output
-STEP_ID=$(curl -s "${KB_BASE}/api/workflows/executions/${EXEC_ID}" \
-  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
-  -H "kbn-xsrf: true" \
-  -H "x-elastic-internal-origin: kibana" \
-  | jq -r '.stepExecutions[0].id')
-
-curl -s "${KB_BASE}/api/workflows/executions/${EXEC_ID}/step/${STEP_ID}" \
-  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
-  -H "kbn-xsrf: true" \
-  -H "x-elastic-internal-origin: kibana" | jq '.output'
-```
-
-For workflows with inputs, pass them in the run body:
-`-d '{"inputs":{"icao24":"a1b2c3","callsign":"DAL123"}}'`
-
-### Test an agent
-
-Use the Agent Builder converse API to send a message and inspect the response.
-
-```sh
-curl -s -X POST "${KB_BASE}/api/agent_builder/converse" \
-  -H "Authorization: ApiKey ${ES_API_KEY_ENCODED}" \
-  -H "kbn-xsrf: true" \
-  -H "Content-Type: application/json" \
-  -d '{"agent_id":"${AGENT_ID}","input":"Your test prompt here"}' \
-  | jq '{status, model: .model_usage.model, response: .response.message}'
-```
-
-### Side-effect awareness
-
-Some workflows trigger real external actions when run:
-
-| Workflow                           | Side effects                                  |
-| ---------------------------------- | --------------------------------------------- |
-| `adsb-aggregate-stats`             | None (read-only ES query)                     |
-| `daily-flight-briefing`            | Sends Slack message, invokes AI agent         |
-| `squawk-7500-enrich`               | External HTTP calls (adsbdb, adsb.lol, GNews) |
-| `squawk-7500-hijack-investigation` | Creates Kibana case, may send Slack           |
-| `squawk-7500-create-case`          | Creates or updates a Kibana case              |
-
-Agent converse calls may invoke workflow tools and incur LLM costs.
+See [docs/testing-api.md](docs/testing-api.md) — curl patterns for ES queries, workflows, agents, and side-effect awareness.
 
 ______________________________________________________________________
 
 ## Known Quirks
 
-Gotchas discovered during development that affect how workflows, alerting, and cases interact.
-
-1. **`lastExecution` on the Workflows API is always `null`** ([elastic/kibana#257744](https://github.com/elastic/kibana/issues/257744)) — after an alert triggers a workflow, querying `GET /api/workflows/<id>` returns `lastExecution: null` even when the workflow has executed successfully. Use the Kibana event log (`.kibana-event-log-*`) or an `elasticsearch.index` canary step to verify execution.
-2. **Kibana Cases `_find` `tags` parameter uses OR logic** ([elastic/kibana#257743](https://github.com/elastic/kibana/issues/257743)) — passing `?tags=foo&tags=bar` matches cases with tag `foo` **or** tag `bar`, not both. Use a single unique tag (e.g. `icao24:<value>`) for deduplication queries instead of combining multiple tags.
-3. **`.workflows` system connector in alert rules** — the connector works when placed in the rule's `actions` array via the public API, but `group` and `frequency` fields are silently stripped. The public API does not support the `system_actions` field (returns 400). The action still fires correctly on each alert evaluation that meets the threshold.
-4. **Workflow `outputs` section ignored on Stack 9.3.x-9.4.x** — the `outputs` top-level key is accepted in workflow YAML but does not populate the execution-level `output` field on Cloud Hosted / Elastic Stack 9.3.x-9.4.x (verified null on 9.4.2). The feature works on Elastic Cloud Serverless. Workflow tools called by agents receive `output: null`; agents fall back to direct ES queries. The four agent-tool workflows (`squawk-7500-enrich`, `adsb-aggregate-stats`, `hijack-cases-summary`, `squawk-7500-create-case`) have `outputs` sections ready — they will activate once the Stack runtime implements the feature.
-5. **Case custom field `type: "number"` is integer-only and unsupported in `kibana.createCase`** — two compounding limitations: (a) the `kibana.createCase` workflow step schema only accepts `"text"` and `"toggle"` custom field types, rejecting `"number"`; (b) even via the Cases REST API, `type: "number"` only accepts integers (not floats like `0.92`). For fields like confidence scores, use `type: "text"` with string values (`"low"`, `"medium"`, `"high"`) to avoid both issues. Note: PATCH on cases replaces the entire `customFields` array, so all fields must be included in every PATCH body to avoid losing values.
-6. **`adsb-enrichment-cache` workaround for workflow outputs on Stack 9.3.x-9.4.x** — because workflow `outputs` are null on Stack (quirk #4), agent-called workflows with HTTP steps (`adsb-aircraft-history`, `squawk-7500-enrich`) write their external API responses to the `adsb-enrichment-cache` index as a side effect. Agents query this index via `platform.core.search` as a fallback when workflow output is null. All HTTP responses are always-fetch-and-write (keyed `adsbdb:{icao24}`, `adsbdb_route:{callsign}`, `adsblol:{icao24}`, `gnews:{callsign}`). The cached data is stored in the `raw` field as a JSON string. All cache steps are marked with `# WORKAROUND(#9):` comments in the workflow YAML. Remove once [#9](https://github.com/face0b1101/adsb-demo/issues/9) is resolved — tracked by [#12](https://github.com/face0b1101/adsb-demo/issues/12).
-7. **`elasticsearch.index` step does not support filters or type-preserving expressions** — the `document` body in an `elasticsearch.index` step only accepts plain `{{ }}` string interpolation. Using `{{ value | json }}` or `${{ expr }}` causes a `Workflow is not valid` error at deploy time. Nested objects interpolated via `{{ }}` are serialised as the string `[object Object]`. **Workaround:** use `elasticsearch.request` with `method: PUT` and `path: "/{index}/_doc/{id}"` instead — its `body` field supports `{{ value | json }}` and handles nested objects correctly when serialised with the `| json` filter.
-8. **Workflow step names are `null` in `get_workflow_execution_status`** — when an agent polls a workflow execution with `platform.core.get_workflow_execution_status`, the `stepExecutions[].stepName` field is always `null` (only `stepType` and `status` are populated). Agents must identify steps by their order and type rather than by name.
-9. **`if` conditions fail silently when referencing failed step outputs** — when a step with `on-failure: continue: true` fails (e.g. searching an index that does not exist), its output is `null`. An `if` condition referencing that output (e.g. `${{ steps.X.output.hits.total.value == 0 }}`) does not evaluate as expected — `null` is not `0`, so the condition is false and the branch is skipped. Design workflows to handle the first-run case where dependent resources may not exist yet.
-10. **`ai.agent` step output is `{message: string}` from Kibana 9.4.2+** — prior to 9.4.2 the `ai.agent` step returned a plain string. From 9.4.2 it returns an object `{message: "..."}`. Templates using `{{ steps.X.output }}` render as `[object Object]`. Conditions using `steps.X.output contains '...'` always evaluate false. Fix: use `{{ steps.X.output.message }}` and `steps.X.output.message contains '...'` everywhere. Affected workflows: `daily-flight-briefing.yaml`, `squawk-7500-hijack-investigation.yaml`.
-11. **Workflows REST API path changed in Kibana 9.4.x** — the single-workflow and run endpoints added a `workflow/` path segment. Old paths (`/api/workflows/{id}`, `/api/workflows/{id}/run`) return 404. Use `/api/workflows/workflow/{id}` and `/api/workflows/workflow/{id}/run`. Execution retrieval path is unchanged: `/api/workflows/executions/{executionId}`. Step listing now uses `/api/workflows/workflow/{workflowId}/executions/steps`.
-12. **ILM `forcemerge` on `fm-clone-*` when the policy last updater is `adsb-automation`:** from Elasticsearch 9.2, ILM’s searchable snapshot action may clone the source index to a temporary index named `fm-clone-*` before force merge ([elastic/elasticsearch#133954](https://github.com/elastic/elasticsearch/pull/133954)). ILM runs with the roles of the user who last updated the policy ([Index lifecycle](https://www.elastic.co/docs/manage-data/lifecycle/index-lifecycle-management/index-lifecycle)). Index privileges on `demos-aircraft-adsb*` do not match `fm-clone-*`, so `indices:admin/forcemerge` fails unless the `adsb-automation` role also grants `manage` and `view_index_metadata` on `fm-clone-*` (as in `setup.sh`), or you set `force_merge_on_clone` to `false` on the `searchable_snapshot` action ([docs](https://www.elastic.co/docs/reference/elasticsearch/index-lifecycle-actions/ilm-searchable-snapshot)).
+See [docs/known-quirks.md](docs/known-quirks.md) — read before touching workflows, cases, ILM, or alert rules.
 
 ______________________________________________________________________
 
