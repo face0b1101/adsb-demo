@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.2] - 2026-06-02
+
 ### Fixed
 
 - **`adsb-automation` ILM `forcemerge` on frozen searchable snapshots:** extended the service role with `fm-clone-*` (`manage`, `view_index_metadata`) so ILM can complete the temporary clone step used before snapshots on Elasticsearch 9.2+ when the lifecycle policy was last updated by that user
@@ -439,4 +441,5 @@ Kibana dashboards.
 [1.9.3]: https://github.com/face0b1101/adsb-demo/compare/v1.9.2...v1.9.3
 [1.10.0]: https://github.com/face0b1101/adsb-demo/compare/v1.9.3...v1.10.0
 [1.10.1]: https://github.com/face0b1101/adsb-demo/compare/v1.10.0...v1.10.1
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.10.1...HEAD
+[1.10.2]: https://github.com/face0b1101/adsb-demo/compare/v1.10.1...v1.10.2
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.10.2...HEAD
