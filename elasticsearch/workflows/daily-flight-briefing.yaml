@@ -140,38 +140,31 @@ steps:
     on-failure:
       continue: true
 
-  - name: generate_briefing
+  - name: generate_briefing_part1
     type: ai.agent
     with:
       agent_id: "adsb_daily_briefing_agent"
       message: |
-        Generate the daily ADS-B flight briefing from the following
-        24-hour aggregated statistics:
+        Generate sections 1–6 ONLY of the daily ADS-B flight briefing from
+        the following 24-hour aggregated statistics. Do NOT include a title,
+        date heading, or any preamble — the title is provided separately.
+        Do NOT include sections 7–11.
 
+        Execution timestamp: {{ execution.startedAt }}
+
+        Sections to produce (1–6):
+        0. Two header lines (no blank line between them, no other preamble):
+             :date: D Month YYYY — 24-hour period ending HH:MM UTC  ← from execution timestamp above
+             _Generated {{ execution.startedAt }}_                   ← italic, exactly as shown
+        1. Executive summary
+        2. Top 5 busiest airports
+        3. Top 5 origin countries
+        4. Airport zone activity
+        5. Regional traffic (top 10 UN subregions)
+        6. Continent overview
+
+        DATA:
         {{ steps.aggregate_stats.output.aggregations | json:2 }}
-
-        === HIJACK INVESTIGATION CASES ===
-        The following are squawk 7500 (hijack) investigation cases from
-        Kibana case management. Each case has tags that include the AI triage
-        assessment (triage:genuine or triage:false_positive). Use created_at
-        timestamps
-        to identify cases from the last 24 hours. If this section is empty
-        or shows an error, state "Hijack case data unavailable" and skip
-        section 10.
-
-        {{ steps.fetch_hijack_cases.output | json:2 }}
-
-        === DEFUNCT CALLSIGN SCAN ===
-        The following callsign prefixes matched known defunct airlines in the
-        last 24 hours. Each row in the ES|QL columnar output contains:
-        callsign_prefix, defunct airline name, country, ICAO code, ceased date,
-        aircraft count, last seen, observed callsigns, and origin countries.
-        If this section is empty or shows an error, state "No defunct airline
-        callsign prefixes detected" and skip section 11.
-
-        {{ steps.defunct_callsign_scan.output | json:2 }}
-
-        Include all sections from your Briefing Format (items 1–11).
 
         IMPORTANT — deduplicated counts:
         Each bucket aggregation now contains a sub-aggregation with the
@@ -183,16 +176,6 @@ steps:
           as "Airport Zone Activity" and avoid percentages that imply full-dataset scope.
         - origin_countries → unique_aircraft.value (unique icao24 per country)
         - traffic_by_subregion / traffic_by_continent → unique_aircraft.value
-        - ground_vs_airborne → unique_aircraft.value.
-          NOTE: these buckets OVERLAP — the same aircraft appears in both
-          on_ground=true and on_ground=false if it landed or took off during
-          the 24h window. Do NOT present this as a ratio. Instead report:
-          (a) "X aircraft were detected on the ground at least once"
-          (b) "exclusively airborne" = unique_aircraft.value (top-level)
-              minus unique_aircraft.value (on_ground=true bucket). These are
-              aircraft never detected on the ground — long-haul overflights,
-              oceanic transits, or high-altitude routes. This is the more
-              noteworthy figure.
         - emergency_squawks → unique_aircraft.value
         The doc_count still appears but reflects raw observations — do NOT
         use it for counts in the briefing. Always prefer the sub-agg value.
@@ -222,15 +205,84 @@ steps:
         DAL  Dallas Love Field              953
         ```
 
-  - name: post_to_slack
+  - name: generate_briefing_part2
+    type: ai.agent
+    with:
+      agent_id: "adsb_daily_briefing_agent"
+      message: |
+        Generate sections 7–11 ONLY of the daily ADS-B flight briefing from
+        the following data. Do NOT include a title, date heading, or any
+        preamble. Do NOT repeat sections 1–6.
+
+        Sections to produce (7–11):
+        7. Ground vs airborne
+        8. Emergency squawks
+        9. Notable findings
+        10. Hijack investigation outcomes
+        11. Defunct callsign detections
+
+        DATA:
+        {{ steps.aggregate_stats.output.aggregations | json:2 }}
+
+        === HIJACK INVESTIGATION CASES ===
+        The following are squawk 7500 (hijack) investigation cases from
+        Kibana case management. Each case has tags that include the AI triage
+        assessment (triage:genuine or triage:false_positive). Use created_at
+        timestamps to identify cases from the last 24 hours. If this section
+        is empty or shows an error, state "Hijack case data unavailable" and
+        skip section 10.
+
+        {{ steps.fetch_hijack_cases.output | json:2 }}
+
+        === DEFUNCT CALLSIGN SCAN ===
+        The following callsign prefixes matched known defunct airlines in the
+        last 24 hours. Each row in the ES|QL columnar output contains:
+        callsign_prefix, defunct airline name, country, ICAO code, ceased date,
+        aircraft count, last seen, observed callsigns, and origin countries.
+        If this section is empty or shows an error, state "No defunct airline
+        callsign prefixes detected" and skip section 11.
+
+        {{ steps.defunct_callsign_scan.output | json:2 }}
+
+        IMPORTANT — deduplicated counts:
+        - ground_vs_airborne → unique_aircraft.value.
+          NOTE: these buckets OVERLAP — the same aircraft appears in both
+          on_ground=true and on_ground=false if it landed or took off during
+          the 24h window. Do NOT present this as a ratio. Instead report:
+          (a) "X aircraft were detected on the ground at least once"
+          (b) "exclusively airborne" = unique_aircraft.value (top-level)
+              minus unique_aircraft.value (on_ground=true bucket). These are
+              aircraft never detected on the ground — long-haul overflights,
+              oceanic transits, or high-altitude routes. This is the more
+              noteworthy figure.
+        - emergency_squawks → unique_aircraft.value
+
+        Format the output for Slack mrkdwn (NOT standard Markdown):
+        - Use *single asterisks* for bold, _underscores_ for italic
+        - NEVER use # headers, **double asterisks**, | pipe tables |, or --- horizontal rules
+        - Use blank lines and *Bold Section Headers* to separate sections
+        - Present ranked/tabular data inside triple-backtick code blocks with fixed-width justified spacing:
+          - Left-align text columns, right-align numeric columns
+          - Pad with spaces so columns align in monospaced font
+        - Use bullet lists for non-tabular data
+
+  - name: post_to_slack_part1
     type: slack
     connector-id: "__SLACK_CONNECTOR_ID__"
     with:
       message: |
         :airplane: *Daily ADS-B Flight Briefing*
-        _Generated {{ execution.startedAt }}_
+        {{ steps.generate_briefing_part1.output.message }}
 
-        {{ steps.generate_briefing.output.message }}
+    on-failure:
+      continue: true
+
+  - name: post_to_slack_part2
+    type: slack
+    connector-id: "__SLACK_CONNECTOR_ID__"
+    with:
+      message: |
+        {{ steps.generate_briefing_part2.output.message }}
 
         :bar_chart: <__KB_ENDPOINT__/app/dashboards#/view/__DASHBOARD_WORLD_OVERVIEW_ID__?_g=(filters:!(),refreshInterval:(pause:!t,value:60000),time:(from:now-24h,to:now))|Open Dashboard>
         :open_file_folder: <__KB_ENDPOINT__/app/observability/cases|Open Cases>

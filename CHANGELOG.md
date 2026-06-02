@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.4] - 2026-06-02
+
+### Changed
+
+- **Daily Flight Briefing — split into two Slack messages:** sections 1–6 (executive summary through continent overview) are posted as message 1; sections 7–11 (ground vs airborne through defunct callsign detections) are posted as message 2, avoiding Slack's character limit and keeping code-block tables intact
+- **Daily Flight Briefing — header format corrected:** removed the agent-generated title that caused a duplicate `:airplane:` heading; the agent now produces only a `:date:` line and italic `_Generated_` timestamp as the preamble, matching the static title supplied by the workflow
+- **`adsb-daily-briefing-agent` instructions updated:** output format guidance now explicitly defers to workflow message instructions (Slack mrkdwn or Markdown scope) rather than always defaulting to standard Markdown with pipe tables
+
 ## [1.10.3] - 2026-06-02
 
 ### Changed
@@ -452,4 +460,5 @@ Kibana dashboards.
 [1.10.1]: https://github.com/face0b1101/adsb-demo/compare/v1.10.0...v1.10.1
 [1.10.2]: https://github.com/face0b1101/adsb-demo/compare/v1.10.1...v1.10.2
 [1.10.3]: https://github.com/face0b1101/adsb-demo/compare/v1.10.2...v1.10.3
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.10.3...HEAD
+[1.10.4]: https://github.com/face0b1101/adsb-demo/compare/v1.10.3...v1.10.4
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.10.4...HEAD
