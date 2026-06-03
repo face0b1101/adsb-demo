@@ -1,0 +1,9 @@
+{
+  "id": "squawk-7500-enrich",
+  "type": "workflow",
+  "description": "Enriches a squawk 7500 (hijack) signal with flight history from ADS-B data, airframe details from adsbdb, current live position from adsb.lol, expected route metadata, and recent news articles from GNews. Required inputs: icao24 (lowercase hex) and optionally callsign. Use when assessing whether a squawk 7500 signal is genuine or a false positive.",
+  "tags": ["adsb", "squawk-7500", "enrichment", "security"],
+  "configuration": {
+    "workflow_id": "__SQUAWK_7500_ENRICH_WF_ID__"
+  }
+}

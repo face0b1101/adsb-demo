@@ -1,0 +1,9 @@
+{
+  "id": "adsb-defunct-callsign-detector",
+  "type": "workflow",
+  "description": "Scans ADS-B data for aircraft broadcasting callsign prefixes from known defunct airlines over a configurable lookback period (default 24h, max 30 days). Returns matched callsign prefixes with defunct airline name, ceased date, aircraft count, and sample callsigns. Use when the user asks about suspicious callsigns, defunct airline callsign misuse, or wants to detect anomalous transponder codes.",
+  "tags": ["adsb", "callsign", "defunct", "security"],
+  "configuration": {
+    "workflow_id": "__ADSB_DEFUNCT_CALLSIGN_DETECTOR_WF_ID__"
+  }
+}

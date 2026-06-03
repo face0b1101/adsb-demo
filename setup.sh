@@ -11,7 +11,7 @@ cd "$SCRIPT_DIR"
 FORCE=false
 SKIP_SERVICE_USER=false
 SELECTED_GROUPS=""
-ALL_GROUPS="space ilm indices enrich pipelines kibana cases workflows agents demouser"
+ALL_GROUPS="space ilm indices enrich pipelines kibana cases workflows tools skills agents demouser"
 
 usage() {
   cat <<EOF
@@ -41,11 +41,12 @@ Options:
   --help                Show this help message.
 
 Examples:
-  ./setup.sh                         Run all groups (skip existing by default)
-  ./setup.sh --only agents,workflows Re-deploy agents and workflows only
-  ./setup.sh --only kibana --force   Reset dashboards to source-controlled versions
-  ./setup.sh --force                 Overwrite everything
-  ./setup.sh --no-service-user       Run all groups without service user
+  ./setup.sh                               Run all groups (skip existing by default)
+  ./setup.sh --only agents,workflows       Re-deploy agents and workflows only
+  ./setup.sh --only workflows,tools,skills Re-deploy workflows, tools, and skills
+  ./setup.sh --only kibana --force         Reset dashboards to source-controlled versions
+  ./setup.sh --force                       Overwrite everything
+  ./setup.sh --no-service-user             Run all groups without service user
 EOF
   exit 0
 }
@@ -796,6 +797,11 @@ deploy_agent() {
 
   step_label "Deploying $label"
 
+  # Strip id from the body — the API rejects it on PUT, and on POST the script
+  # injects it explicitly so that the agent_id argument is the canonical source.
+  local agent_body_no_id
+  agent_body_no_id=$(jq 'del(.id)' "$agent_file")
+
   if [[ "$FORCE" == "true" ]]; then
     local agent_tmp agent_http
     agent_tmp=$(mktemp)
@@ -804,7 +810,7 @@ deploy_agent() {
       -X PUT "$KB_BASE/api/agent_builder/agents/$agent_id" \
       -H "kbn-xsrf: true" \
       -H "Content-Type: application/json" \
-      -d "@$agent_file")
+      -d "$agent_body_no_id")
 
     if [[ "$agent_http" == "404" ]]; then
       agent_http=$(curl -s -w '%{http_code}' -o "$agent_tmp" \
@@ -812,7 +818,7 @@ deploy_agent() {
         -X POST "$KB_BASE/api/agent_builder/agents" \
         -H "kbn-xsrf: true" \
         -H "Content-Type: application/json" \
-        -d "$(jq --arg id "$agent_id" '. + {id: $id}' "$agent_file")")
+        -d "$(echo "$agent_body_no_id" | jq --arg id "$agent_id" '. + {id: $id}')")
     fi
 
     if [[ "$agent_http" -lt 200 || "$agent_http" -ge 300 ]]; then
@@ -831,7 +837,7 @@ deploy_agent() {
       -X POST "$KB_BASE/api/agent_builder/agents" \
       -H "kbn-xsrf: true" \
       -H "Content-Type: application/json" \
-      -d "$(jq --arg id "$agent_id" '. + {id: $id}' "$agent_file")")
+      -d "$(echo "$agent_body_no_id" | jq --arg id "$agent_id" '. + {id: $id}')")
 
     if [[ "$agent_http" -ge 200 && "$agent_http" -lt 300 ]]; then
       echo "  Created (HTTP $agent_http)"
@@ -1357,9 +1363,7 @@ setup_workflows() {
   fi
   rm -f "$enrich_tmp"
 
-  register_wf_tool "squawk-7500-enrich" "${enrich_wf_id:-}" \
-    $'Gathers enrichment data for a squawk 7500 investigation \u2014 flight history from Elasticsearch, aircraft metadata and route from adsbdb, live position from adsb.lol, and GNews news search.\n\nInputs:\n- icao24 (required string): ICAO 24-bit aircraft address\n- callsign (optional string): flight callsign\n\nReturns step outputs: flight_history (ES search), latest_position (ES search), adsbdb_lookup (HTTP), adsblol_lookup (HTTP), news_search (HTTP).\n\nStack 9.3.x workaround: HTTP step outputs may be null. The workflow caches enrichment responses in the adsb-enrichment-cache index. Query by _id: adsbdb:{icao24}, adsbdb_route:{callsign}, adsblol:{icao24}, gnews:{callsign}.\n\nThis is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
-    '["adsb", "squawk-7500", "enrichment"]'
+  register_wf_tool_from_file "squawk-7500-enrich" "${enrich_wf_id:-}"
 
   # --- Deploy squawk 7500 create-case workflow ---
   step_label "Deploying squawk 7500 create-case workflow"
@@ -1441,9 +1445,7 @@ setup_workflows() {
   fi
   rm -f "$case_tmp"
 
-  register_wf_tool "squawk-7500-create-case" "${case_wf_id:-}" \
-    $'Creates or updates a Kibana case for a squawk 7500 investigation with deduplication. If an open case already exists for the aircraft, adds a comment; otherwise creates a new case.\n\nInputs:\n- icao24 (required string): ICAO 24-bit aircraft address\n- callsign (optional string): flight callsign\n- triage_assessment (required string): genuine or false_positive\n- confidence (required string): confidence level \u2014 low, medium, or high\n- reasoning (required string): full assessment reasoning\n\nThis is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
-    '["adsb", "squawk-7500", "cases"]'
+  register_wf_tool_from_file "squawk-7500-create-case" "${case_wf_id:-}"
 
   # --- Deploy ADS-B aggregate stats workflow ---
   step_label "Deploying ADS-B aggregate stats workflow"
@@ -1490,9 +1492,7 @@ setup_workflows() {
     else
       echo "  Already exists — skipping"
       local agg_wf_id="$existing_agg_id"
-      register_wf_tool "adsb-aggregate-stats" "$agg_wf_id" \
-        $'Aggregates the last 24 hours of ADS-B data from demos-aircraft-adsb. Takes no parameters (fixed now-24h window).\n\nReturned aggregation keys:\n- unique_aircraft: cardinality of icao24\n- busiest_airports: top 10 by airport.iata_code\n- origin_countries: top 10 by origin_country\n- activity_breakdown: terms on airport.activity (arriving, departing, taxiing, overflight, at_airport — airport airspace zone only)\n- traffic_by_subregion: top 15 by geo.SUBREGION\n- traffic_by_continent: top 7 by geo.CONTINENT\n- ground_vs_airborne: terms on on_ground\n- emergency_squawks: named filters for 7500 (hijack), 7600 (radio failure), 7700 (general emergency)\n\nResults are at output.aggregations. Total document count is at hits.total.value. This is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
-        '["adsb", "aggregation"]'
+      register_wf_tool_from_file "adsb-aggregate-stats" "$agg_wf_id"
       rm -f "$agg_tmp"
       return 0
     fi
@@ -1528,9 +1528,7 @@ setup_workflows() {
 
   echo "  OK (HTTP $agg_http) — workflow ID: ${agg_wf_id:-unknown}"
 
-  register_wf_tool "adsb-aggregate-stats" "$agg_wf_id" \
-    $'Aggregates the last 24 hours of ADS-B data from demos-aircraft-adsb. Takes no parameters (fixed now-24h window).\n\nReturned aggregation keys:\n- unique_aircraft: cardinality of icao24\n- busiest_airports: top 10 by airport.iata_code\n- origin_countries: top 10 by origin_country\n- activity_breakdown: terms on airport.activity (arriving, departing, taxiing, overflight, at_airport — airport airspace zone only)\n- traffic_by_subregion: top 15 by geo.SUBREGION\n- traffic_by_continent: top 7 by geo.CONTINENT\n- ground_vs_airborne: terms on on_ground\n- emergency_squawks: named filters for 7500 (hijack), 7600 (radio failure), 7700 (general emergency)\n\nResults are at output.aggregations. Total document count is at hits.total.value. This is an async workflow \u2014 poll with platform.core.get_workflow_execution_status until complete.' \
-    '["adsb", "aggregation"]'
+  register_wf_tool_from_file "adsb-aggregate-stats" "$agg_wf_id"
   rm -f "$agg_tmp"
 
   # --- Deploy aircraft history report workflow ---
@@ -1579,9 +1577,7 @@ setup_workflows() {
     else
       echo "  Already exists — skipping"
       local hist_wf_id="$existing_hist_id"
-      register_wf_tool "adsb-aircraft-history" "$hist_wf_id" \
-        $'Generates a comprehensive history report for an individual aircraft over a configurable time range.\n\nInputs:\n- icao24 (required string): ICAO 24-bit aircraft address (hex, e.g. 406bbb)\n- lookback (optional string, default now-24h): lookback period in ES date math (e.g. now-24h, now-7d, now-48h)\n\nReturned step outputs:\n- flight_summary: aggregations — callsigns (ordered by first_seen, with time windows and airports), airports_visited, countries_overflown, regions, origin_country, altitude_stats, velocity_stats, ground_vs_airborne, squawk_codes, time_range, hourly_activity\n- positions: up to 1000 time-ordered position documents\n- find_cases: Kibana investigation cases tagged with the aircraft icao24\n- adsbdb_aircraft: airframe details (type, registration, operator) from adsbdb\n- adsblol_position: current live position from adsb.lol\n\nStack 9.3.x workaround: HTTP step outputs may be null. The workflow caches enrichment responses in the adsb-enrichment-cache index. Query by _id: adsbdb:{icao24} and adsblol:{icao24}.\n\nThis is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
-        '["adsb", "aircraft", "history"]'
+      register_wf_tool_from_file "adsb-aircraft-history" "$hist_wf_id"
       rm -f "$hist_tmp"
       return 0
     fi
@@ -1617,9 +1613,7 @@ setup_workflows() {
 
   echo "  OK (HTTP $hist_http) — workflow ID: ${hist_wf_id:-unknown}"
 
-  register_wf_tool "adsb-aircraft-history" "$hist_wf_id" \
-    $'Generates a comprehensive history report for an individual aircraft over a configurable time range.\n\nInputs:\n- icao24 (required string): ICAO 24-bit aircraft address (hex, e.g. 406bbb)\n- lookback (optional string, default now-24h): lookback period in ES date math (e.g. now-24h, now-7d, now-48h)\n\nReturned step outputs:\n- flight_summary: aggregations — callsigns (ordered by first_seen, with time windows and airports), airports_visited, countries_overflown, regions, origin_country, altitude_stats, velocity_stats, ground_vs_airborne, squawk_codes, time_range, hourly_activity\n- positions: up to 1000 time-ordered position documents\n- find_cases: Kibana investigation cases tagged with the aircraft icao24\n- adsbdb_aircraft: airframe details (type, registration, operator) from adsbdb\n- adsblol_position: current live position from adsb.lol\n\nStack 9.3.x workaround: HTTP step outputs may be null. The workflow caches enrichment responses in the adsb-enrichment-cache index. Query by _id: adsbdb:{icao24} and adsblol:{icao24}.\n\nThis is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
-    '["adsb", "aircraft", "history"]'
+  register_wf_tool_from_file "adsb-aircraft-history" "$hist_wf_id"
   rm -f "$hist_tmp"
 
   # --- Deploy airport activity report workflow ---
@@ -1668,9 +1662,7 @@ setup_workflows() {
     else
       echo "  Already exists — skipping"
       local arpt_wf_id="$existing_arpt_id"
-      register_wf_tool "adsb-airport-activity" "$arpt_wf_id" \
-        $'Generates a comprehensive airport activity report over a configurable time range using ES|QL.\n\nInputs:\n- airport (required string): airport name, IATA code, or ICAO/GPS code (e.g. LHR, Heathrow, EGLL). The workflow resolves free-text input automatically via case-insensitive matching.\n- lookback (optional string, default 24 hours): lookback period as an ES|QL time interval (e.g. 24 hours, 7 days, 48 hours)\n\nReturned step outputs (ES|QL columnar format — columns + values arrays):\n- resolve_airport: up to 5 matching airports (doc_count, airport.iata_code, airport.name, airport.type, airport.wikipedia)\n- traffic_summary: unique_aircraft, unique_flights, total_obs, first_seen, last_seen\n- activity_breakdown: unique_flights, unique_aircraft by airport.activity\n- hourly_traffic: unique_aircraft by hour\n- top_flights: first_seen, last_seen, origins, activities by callsign (up to 25)\n- origin_countries: unique_aircraft by origin_country (up to 15)\n- emergency_squawks: unique_aircraft by squawk (7500/7600/7700 only)\n- recent_positions: up to 500 recent position observations\n\nThis is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
-        '["adsb", "airport", "activity"]'
+      register_wf_tool_from_file "adsb-airport-activity" "$arpt_wf_id"
       rm -f "$arpt_tmp"
     fi
   else
@@ -1708,9 +1700,7 @@ setup_workflows() {
 
     echo "  OK (HTTP $arpt_http) — workflow ID: ${arpt_wf_id:-unknown}"
 
-    register_wf_tool "adsb-airport-activity" "$arpt_wf_id" \
-      $'Generates a comprehensive airport activity report over a configurable time range using ES|QL.\n\nInputs:\n- airport (required string): airport name, IATA code, or ICAO/GPS code (e.g. LHR, Heathrow, EGLL). The workflow resolves free-text input automatically via case-insensitive matching.\n- lookback (optional string, default 24 hours): lookback period as an ES|QL time interval (e.g. 24 hours, 7 days, 48 hours)\n\nReturned step outputs (ES|QL columnar format — columns + values arrays):\n- resolve_airport: up to 5 matching airports (doc_count, airport.iata_code, airport.name, airport.type, airport.wikipedia)\n- traffic_summary: unique_aircraft, unique_flights, total_obs, first_seen, last_seen\n- activity_breakdown: unique_flights, unique_aircraft by airport.activity\n- hourly_traffic: unique_aircraft by hour\n- top_flights: first_seen, last_seen, origins, activities by callsign (up to 25)\n- origin_countries: unique_aircraft by origin_country (up to 15)\n- emergency_squawks: unique_aircraft by squawk (7500/7600/7700 only)\n- recent_positions: up to 500 recent position observations\n\nThis is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
-      '["adsb", "airport", "activity"]'
+    register_wf_tool_from_file "adsb-airport-activity" "$arpt_wf_id"
   fi
   rm -f "$arpt_tmp"
 
@@ -1760,9 +1750,7 @@ setup_workflows() {
     else
       echo "  Already exists — skipping"
       local hcs_wf_id="$existing_hcs_id"
-      register_wf_tool "hijack-cases-summary" "$hcs_wf_id" \
-        $'Fetches squawk 7500 (hijack) investigation cases from Kibana case management. Returns case titles, tags (including triage:genuine or triage:false_positive), status, and creation dates.\n\nUse this to review hijack investigation outcomes — how many were genuine vs false positive. Cases are tagged with triage:genuine or triage:false_positive after AI triage assessment.\n\nResults are at output.cases (array) and output.total (count). This is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
-        '["adsb", "squawk-7500", "cases"]'
+      register_wf_tool_from_file "hijack-cases-summary" "$hcs_wf_id"
       rm -f "$hcs_tmp"
       return 0
     fi
@@ -1798,9 +1786,7 @@ setup_workflows() {
 
   echo "  OK (HTTP $hcs_http) — workflow ID: ${hcs_wf_id:-unknown}"
 
-  register_wf_tool "hijack-cases-summary" "$hcs_wf_id" \
-    $'Fetches squawk 7500 (hijack) investigation cases from Kibana case management. Returns case titles, tags (including triage:genuine or triage:false_positive), status, and creation dates.\n\nUse this to review hijack investigation outcomes — how many were genuine vs false positive. Cases are tagged with triage:genuine or triage:false_positive after AI triage assessment.\n\nResults are at output.cases (array) and output.total (count). This is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
-    '["adsb", "squawk-7500", "cases"]'
+  register_wf_tool_from_file "hijack-cases-summary" "$hcs_wf_id"
   rm -f "$hcs_tmp"
 
   # --- Deploy defunct callsign detector workflow ---
@@ -1848,9 +1834,7 @@ setup_workflows() {
     else
       echo "  Already exists — skipping"
       local dcd_wf_id="$existing_dcd_id"
-      register_wf_tool "adsb-defunct-callsign-detector" "$dcd_wf_id" \
-        $'Detects aircraft using callsign prefixes matching known defunct airlines. Cross-references ADS-B data against the adsb-airlines-defunct lookup index using ES|QL LOOKUP JOIN.\n\nInputs:\n- lookback (optional string, default 24 hours): lookback period as an ES|QL time interval (e.g. 24 hours, 7 days, 30 days). Max 30 days.\n\nReturns ES|QL columnar output (columns + values) with: callsign_prefix, defunct_airline_name, defunct_country, defunct_icao, operations.ceased.text, aircraft_count, last_seen, callsigns (array), countries (array).\n\nStack 9.3.x workaround: workflow output may be null. The workflow caches results in the adsb-enrichment-cache index with _id: defunct-callsign-detections. Query that document and parse the raw field (JSON string) as a fallback.\n\nThis is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
-        '["adsb", "callsign", "defunct"]'
+      register_wf_tool_from_file "adsb-defunct-callsign-detector" "$dcd_wf_id"
       rm -f "$dcd_tmp"
       return 0
     fi
@@ -1886,9 +1870,7 @@ setup_workflows() {
 
   echo "  OK (HTTP $dcd_http) — workflow ID: ${dcd_wf_id:-unknown}"
 
-  register_wf_tool "adsb-defunct-callsign-detector" "${dcd_wf_id:-}" \
-    $'Detects aircraft using callsign prefixes matching known defunct airlines. Cross-references ADS-B data against the adsb-airlines-defunct lookup index using ES|QL LOOKUP JOIN.\n\nInputs:\n- lookback (optional string, default 24 hours): lookback period as an ES|QL time interval (e.g. 24 hours, 7 days, 30 days). Max 30 days.\n\nReturns ES|QL columnar output (columns + values) with: callsign_prefix, defunct_airline_name, defunct_country, defunct_icao, operations.ceased.text, aircraft_count, last_seen, callsigns (array), countries (array).\n\nStack 9.3.x workaround: workflow output may be null. The workflow caches results in the adsb-enrichment-cache index with _id: defunct-callsign-detections. Query that document and parse the raw field (JSON string) as a fallback.\n\nThis is an async workflow — poll with platform.core.get_workflow_execution_status until complete.' \
-    '["adsb", "callsign", "defunct"]'
+  register_wf_tool_from_file "adsb-defunct-callsign-detector" "${dcd_wf_id:-}"
   rm -f "$dcd_tmp"
 }
 
@@ -1938,6 +1920,142 @@ register_wf_tool() {
     cat "$tool_tmp" >&2
   fi
   rm -f "$tool_tmp"
+}
+
+# ---------------------------------------------------------------------------
+# register_wf_tool_from_file <tool_id> <workflow_id>
+# Loads description and tags from elasticsearch/tools/<tool_id>.json and
+# calls register_wf_tool. The workflow_id placeholder in the JSON file is
+# replaced at runtime with the live workflow-* UUID.
+# ---------------------------------------------------------------------------
+register_wf_tool_from_file() {
+  local tool_id="$1" wf_id="$2"
+  local tool_json="elasticsearch/tools/${tool_id}.json"
+
+  if [[ ! -f "$tool_json" ]]; then
+    echo "  WARNING: Tool JSON not found: $tool_json — skipping" >&2
+    return 0
+  fi
+
+  local tool_desc tags_json
+  tool_desc=$(jq -r '.description' "$tool_json")
+  tags_json=$(jq -c '.tags // []' "$tool_json")
+
+  register_wf_tool "$tool_id" "$wf_id" "$tool_desc" "$tags_json"
+}
+
+# ---------------------------------------------------------------------------
+# Group: tools
+# ---------------------------------------------------------------------------
+
+setup_tools() {
+  step_label "Deploying workflow tools from elasticsearch/tools/"
+
+  local tool_json tool_id wf_id_field tool_payload tool_tmp tool_http
+
+  for tool_json in elasticsearch/tools/*.json; do
+    [[ -f "$tool_json" ]] || continue
+    tool_id=$(jq -r '.id' "$tool_json")
+    step_label "  Deploying tool: $tool_id"
+
+    # Build payload: inject live workflow_id by looking up the corresponding
+    # workflow by name. The placeholder __*_WF_ID__ in the JSON must be
+    # replaced with a real UUID obtained from the running Kibana instance.
+    # We query the workflows list and match by the workflow name derived from
+    # the tool's configuration.workflow_id placeholder suffix pattern.
+    # For tools/ deploy, we trust that workflows have already been deployed
+    # (deploy order: workflows -> tools). Look up each tool's workflow_id via
+    # the tool JSON's placeholder to determine the workflow name mapping.
+    local placeholder wf_name wf_lookup_tmp wf_lookup_http real_wf_id=""
+    placeholder=$(jq -r '.configuration.workflow_id' "$tool_json")
+
+    case "$placeholder" in
+      __ADSB_AGGREGATE_STATS_WF_ID__)   wf_name="ADS-B Aggregate Stats" ;;
+      __ADSB_AIRCRAFT_HISTORY_WF_ID__)  wf_name="ADS-B Aircraft History Report" ;;
+      __ADSB_AIRPORT_ACTIVITY_WF_ID__)  wf_name="ADS-B Airport Activity Report" ;;
+      __ADSB_DEFUNCT_CALLSIGN_DETECTOR_WF_ID__) wf_name="Defunct Callsign Detector" ;;
+      __HIJACK_CASES_SUMMARY_WF_ID__)   wf_name="Hijack Cases Summary" ;;
+      __SQUAWK_7500_ENRICH_WF_ID__)     wf_name="Squawk 7500 Enrich" ;;
+      __SQUAWK_7500_CREATE_CASE_WF_ID__) wf_name="Squawk 7500 Create Case" ;;
+      *)                                wf_name="" ;;
+    esac
+
+    if [[ -z "$wf_name" ]]; then
+      echo "  WARNING: Unknown workflow placeholder '$placeholder' for tool $tool_id — skipping" >&2
+      continue
+    fi
+
+    wf_lookup_tmp=$(mktemp)
+    wf_lookup_http=$(curl -s -w '%{http_code}' -o "$wf_lookup_tmp" \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -H "kbn-xsrf: true" \
+      -H "x-elastic-internal-origin: kibana" \
+      "$KB_BASE/api/workflows")
+    if [[ "$wf_lookup_http" -ge 200 && "$wf_lookup_http" -lt 300 ]]; then
+      real_wf_id=$(jq -r --arg n "$wf_name" \
+        '(.workflows // .results // [])[] | select(.name == $n) | .id' \
+        < "$wf_lookup_tmp" 2>/dev/null | head -1 || true)
+    fi
+    rm -f "$wf_lookup_tmp"
+
+    if [[ -z "$real_wf_id" ]]; then
+      echo "  WARNING: Workflow '$wf_name' not found — cannot register tool $tool_id" >&2
+      continue
+    fi
+
+    register_wf_tool_from_file "$tool_id" "$real_wf_id"
+  done
+}
+
+# ---------------------------------------------------------------------------
+# Group: skills
+# ---------------------------------------------------------------------------
+
+setup_skills() {
+  step_label "Deploying agent skills from elasticsearch/skills/"
+
+  local skill_json skill_id skill_tmp skill_http
+
+  for skill_json in elasticsearch/skills/*.json; do
+    [[ -f "$skill_json" ]] || continue
+    skill_id=$(jq -r '.id' "$skill_json")
+    step_label "  Deploying skill: $skill_id"
+
+    skill_tmp=$(mktemp)
+    skill_http=$(curl -s -w '%{http_code}' -o "$skill_tmp" \
+      -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+      -X POST "$KB_BASE/api/agent_builder/skills" \
+      -H "kbn-xsrf: true" \
+      -H "Content-Type: application/json" \
+      -d "@$skill_json")
+
+    if [[ "$skill_http" -ge 200 && "$skill_http" -lt 300 ]]; then
+      echo "  Skill deployed (HTTP $skill_http)"
+    elif [[ "$skill_http" == "409" ]] || { [[ "$skill_http" == "400" ]] && grep -q "already exists" "$skill_tmp"; }; then
+      if [[ "$FORCE" == "true" ]]; then
+        local skill_update_payload
+        skill_update_payload=$(jq 'del(.id)' "$skill_json")
+        skill_http=$(curl -s -w '%{http_code}' -o "$skill_tmp" \
+          -H "Authorization: ApiKey $ES_API_KEY_ENCODED" \
+          -X PUT "$KB_BASE/api/agent_builder/skills/$skill_id" \
+          -H "kbn-xsrf: true" \
+          -H "Content-Type: application/json" \
+          -d "$skill_update_payload")
+        if [[ "$skill_http" -ge 200 && "$skill_http" -lt 300 ]]; then
+          echo "  Skill updated (HTTP $skill_http)"
+        else
+          echo "  WARNING: Could not update skill $skill_id (HTTP $skill_http)" >&2
+          cat "$skill_tmp" >&2
+        fi
+      else
+        echo "  Skill already exists — skipping"
+      fi
+    else
+      echo "  WARNING: Could not deploy skill $skill_id (HTTP $skill_http)" >&2
+      cat "$skill_tmp" >&2
+    fi
+    rm -f "$skill_tmp"
+  done
 }
 
 # ---------------------------------------------------------------------------
@@ -2180,6 +2298,8 @@ group_enabled "pipelines" && setup_pipelines
 group_enabled "kibana"    && setup_kibana
 group_enabled "cases"     && setup_cases
 group_enabled "workflows" && setup_workflows
+group_enabled "tools"     && setup_tools
+group_enabled "skills"    && setup_skills
 group_enabled "agents"    && setup_agents
 group_enabled "demouser"  && setup_demouser
 

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-06-03
+
+### Changed
+
+- **Daily Flight Briefing reverted to single agent call + single Slack message:** undoes the two-part split introduced in v1.10.4 (which caused section numbering regression in part 2); the merged prompt covers all 11 sections, retaining the header fix (`:date:` + `_Generated_` preamble from agent, `:airplane:` title from workflow template only)
+- **Agent instructions shortened to role-only:** all three agents (`adsb_daily_briefing_agent`, `adsb_agent`, `adsb_hijack_assessment_agent`) now carry compact role-only instructions and reference domain guidance via `skill_ids`, reducing instruction payload from ~8 KB to ~0.5 KB per agent
+- **`setup.sh` deploy order updated:** workflows → tools → skills → agents; inline tool descriptions replaced with file-sourced descriptions from `elasticsearch/tools/`
+
+### Added
+
+- **`elasticsearch/tools/`** — seven workflow tool JSON files (`adsb-aggregate-stats`, `adsb-aircraft-history`, `adsb-airport-activity`, `adsb-defunct-callsign-detector`, `hijack-cases-summary`, `squawk-7500-enrich`, `squawk-7500-create-case`); `workflow_id` placeholder replaced at deploy time with live UUID; descriptions serve as LLM routing signals
+- **`elasticsearch/skills/`** — three Agent Builder 9.4 skill JSON files (`adsb-briefing-analyst-skill`, `adsb-tracking-specialist-skill`, `adsb-hijack-assessment-skill`); each contains the full domain mandate (briefing format, field reference, triage runbook, counting rules, enrichment cache fallback) and a `tool_ids` list
+- **`setup_tools()` function in `setup.sh`** — iterates `elasticsearch/tools/*.json`, resolves live workflow UUIDs, and calls `register_wf_tool_from_file`; supports `./setup.sh --only tools`
+- **`setup_skills()` function in `setup.sh`** — iterates `elasticsearch/skills/*.json`, deploys via `POST /api/agent_builder/skills` with `PUT` fallback on `--force`; supports `./setup.sh --only skills`
+- **`register_wf_tool_from_file()` helper in `setup.sh`** — loads description and tags from the tool JSON file and delegates to `register_wf_tool`, keeping tool metadata canonical in source
+
 ## [1.10.4] - 2026-06-02
 
 ### Changed
@@ -461,4 +477,5 @@ Kibana dashboards.
 [1.10.2]: https://github.com/face0b1101/adsb-demo/compare/v1.10.1...v1.10.2
 [1.10.3]: https://github.com/face0b1101/adsb-demo/compare/v1.10.2...v1.10.3
 [1.10.4]: https://github.com/face0b1101/adsb-demo/compare/v1.10.3...v1.10.4
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.10.4...HEAD
+[1.11.0]: https://github.com/face0b1101/adsb-demo/compare/v1.10.4...v1.11.0
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.0...HEAD

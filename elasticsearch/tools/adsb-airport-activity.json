@@ -1,0 +1,9 @@
+{
+  "id": "adsb-airport-activity",
+  "type": "workflow",
+  "description": "Fetches activity report for a specific airport by name, IATA code, or ICAO code over a configurable lookback period (default 24h, max 30 days). Returns traffic summary, activity breakdown (arriving/departing/taxiing/overflight), hourly traffic profile, top flights, origin countries, emergency squawks, and recent positions. Use when the user asks about activity at a specific airport or wants an airport traffic report.",
+  "tags": ["adsb", "airport", "activity", "traffic"],
+  "configuration": {
+    "workflow_id": "__ADSB_AIRPORT_ACTIVITY_WF_ID__"
+  }
+}

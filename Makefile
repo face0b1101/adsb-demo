@@ -1,7 +1,8 @@
 FORCE_FLAG := $(if $(FORCE),--force,)
 
 .PHONY: setup setup-no-service-user deploy-ilm deploy-indices deploy-enrich deploy-pipelines deploy-kibana \
-        deploy-cases deploy-workflows deploy-agents deploy-demouser deploy-es deploy-ai redeploy \
+        deploy-cases deploy-workflows deploy-tools deploy-skills deploy-agents deploy-demouser \
+        deploy-es deploy-ai redeploy \
         up down logs restart status clean \
         validate health ps shell help
 
@@ -36,6 +37,12 @@ deploy-cases:       ## Deploy case configuration (custom fields, templates)
 deploy-workflows:   ## Deploy Kibana workflows
 	./setup.sh --only workflows $(FORCE_FLAG)
 
+deploy-tools:       ## Deploy Agent Builder workflow tools
+	./setup.sh --only tools $(FORCE_FLAG)
+
+deploy-skills:      ## Deploy Agent Builder skills
+	./setup.sh --only skills $(FORCE_FLAG)
+
 deploy-agents:      ## Deploy Kibana AI agents
 	./setup.sh --only agents $(FORCE_FLAG)
 
@@ -45,8 +52,8 @@ deploy-demouser:    ## Deploy demo user roles and users
 deploy-es:          ## Deploy all ES resources (ilm + indices + enrich + pipelines)
 	./setup.sh --only ilm,indices,enrich,pipelines $(FORCE_FLAG)
 
-deploy-ai:          ## Deploy AI layer (workflows + agents)
-	./setup.sh --only workflows,agents $(FORCE_FLAG)
+deploy-ai:          ## Deploy AI layer (workflows + tools + skills + agents)
+	./setup.sh --only workflows,tools,skills,agents $(FORCE_FLAG)
 
 redeploy:           ## Re-deploy all resources (force overwrite)
 	./setup.sh --force

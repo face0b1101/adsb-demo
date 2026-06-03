@@ -1,0 +1,9 @@
+{
+  "id": "squawk-7500-create-case",
+  "type": "workflow",
+  "description": "Creates or updates a Kibana case for a squawk 7500 (hijack) investigation. Required inputs: icao24, callsign, triage_assessment (genuine or false_positive), confidence (low/medium/high), and reasoning. Deduplicates by icao24 tag to avoid creating duplicate cases. Use only after a full triage assessment has been completed and the user has confirmed they want to open a case.",
+  "tags": ["adsb", "squawk-7500", "cases", "security"],
+  "configuration": {
+    "workflow_id": "__SQUAWK_7500_CREATE_CASE_WF_ID__"
+  }
+}

@@ -1,15 +1,37 @@
 # Agents
 
+This directory contains the Kibana Agent Builder definitions for the three
+adsb-demo agents, along with their supporting **skills** and **tools** in the
+subdirectories below.
+
+```
+elasticsearch/agents/    ← agent JSON (role-only instructions + skill_ids + tool_ids)
+elasticsearch/skills/    ← skill JSON (domain mandates, formatting rules, tool guidance)
+elasticsearch/tools/     ← tool JSON (workflow bindings with LLM routing descriptions)
+```
+
+## Layered Agent Format (9.4+)
+
+Agents follow the Agent Builder 9.4 layered style. Rather than embedding all
+guidance in the agent's `instructions` field, each agent carries a short
+role-only prompt and references one or more **skills** via `skill_ids`. Skills
+hold the domain-specific mandates, formatting rules, and tool-usage guidance.
+**Tools** bind workflow IDs with descriptions that the LLM uses for routing.
+
+```
+Agent JSON          role-only persona + "follow guidance in your skills"
+  └─ skill_ids  →  Skills JSON  full domain mandate (briefing format, triage
+                                 runbook, field reference, counting rules…)
+                     └─ tool_ids → Tools JSON  workflow binding + routing description
+```
+
+Agents are deployed by `setup.sh` in the order: workflows → tools → skills → agents.
+
 Each JSON file in this directory defines a Kibana Agent Builder agent. Agents are
 conversational AI assistants deployed to the Elastic Stack via `setup.sh` (or
 `make setup`). Once deployed, they are accessible through the Agent Builder chat
 interface in Kibana, where users can ask questions and trigger workflow tools
 directly from the conversation.
-
-Agents combine a system prompt (instructions), a set of tools (platform APIs and
-workflow tools), and display metadata (name, avatar, labels). The system prompt
-tells the model what it knows, how to behave, and which tools to call for
-different tasks.
 
 ## Inventory
 
@@ -90,9 +112,12 @@ ______________________________________________________________________
 **Index:** `demos-aircraft-adsb`
 
 A general-purpose agent for querying and analysing live ADS-B flight data. It
-has direct access to Elasticsearch platform tools for ad-hoc queries and two
-workflow tools for structured reports: per-aircraft history and per-airport
-activity.
+has direct access to Elasticsearch platform tools for ad-hoc queries and workflow
+tools for structured reports: per-aircraft history, per-airport activity, and
+defunct callsign detection.
+
+**Skill:** `adsb-tracking-specialist-skill` (field reference, tool guidance,
+aircraft/airport/defunct report formats, enrichment cache fallback patterns)
 
 **Tools:**
 
@@ -143,14 +168,17 @@ ______________________________________________________________________
 **Index:** `demos-aircraft-adsb`
 
 Generates structured daily flight briefings from 24-hour ADS-B aggregations. In
-interactive chat, it calls the `adsb-aggregate-stats` workflow tool to fetch
-data, polls for completion, then formats a 9-section briefing. It can also
-answer follow-up questions about specific airports, regions, or anomalies using
-direct search.
+interactive chat, it calls the `adsb-aggregate-stats` and `hijack-cases-summary`
+workflow tools to fetch data, polls for completion, then formats an 11-section
+briefing. It can also answer follow-up questions about specific airports,
+regions, or anomalies using direct search.
 
 This agent is also invoked automatically by the `daily-flight-briefing` workflow
 as an `ai.agent` step -- in that path, aggregation results are passed directly
-in the prompt and the agent formats them for Slack.
+in the prompt and the agent formats them for Slack (single message).
+
+**Skill:** `adsb-briefing-analyst-skill` (briefing format mandate, section
+rules, Slack mrkdwn guidance, counting rules)
 
 **Tools:**
 
@@ -158,20 +186,22 @@ in the prompt and the agent formats them for Slack.
 | --------------------------------------------- | -------------------------------------- |
 | `platform.core.search`                        | Ad-hoc queries for follow-up questions |
 | `platform.core.get_workflow_execution_status` | Poll workflow completion               |
-| `adsb-aggregate-stats`                        | Trigger 24 h aggregation workflow      |
+| `adsb-aggregate-stats`                        | Trigger 24h aggregation workflow       |
+| `hijack-cases-summary`                        | Fetch squawk 7500 investigation cases  |
 
 **Briefing sections:**
 
-01. Total observations and unique aircraft
+01. Executive summary (unique aircraft, exclusively-airborne count)
 02. Top 5 busiest airports (IATA + full name, unique flights)
 03. Top 5 origin countries (unique aircraft)
-04. Airport activity breakdown (arriving, departing, taxiing, overflight, at_airport)
+04. Airport zone activity (arriving, departing, taxiing, overflight, at_airport)
 05. Regional traffic (top 10 UN subregions)
 06. Continent overview
-07. Ground vs airborne ratio
+07. Ground vs airborne (overlapping buckets; exclusively-airborne highlighted)
 08. Emergency squawks (7500, 7600, 7700)
 09. Notable findings
-10. Defunct callsign detections
+10. Hijack investigation outcomes
+11. Defunct callsign detections
 
 ```mermaid
 flowchart TD
@@ -201,6 +231,10 @@ An aviation security analyst that evaluates whether a squawk 7500 (hijack)
 transponder code is genuine or a false positive. It uses flight history,
 aircraft registry data, live tracking cross-references, and news search to
 build an evidence-based assessment.
+
+**Skill:** `adsb-hijack-assessment-skill` (triage runbook, evaluation criteria,
+confidence scoring, output format, case-creation guidance, enrichment cache
+fallback)
 
 **Tools:**
 
@@ -276,26 +310,61 @@ ______________________________________________________________________
 
 ## Deployment
 
-All three agents are deployed by `setup.sh`:
+All three agents and their supporting skills and tools are deployed by `setup.sh`:
 
 ```bash
 # Deploy everything
 make setup
 
-# Deploy only agents
-./setup.sh --only agents
+# Deploy the full AI layer (workflows + tools + skills + agents)
+./setup.sh --only workflows,tools,skills,agents
 
-# Re-deploy agents, overwriting existing
+# Re-deploy agents only (tools and skills must already exist)
 ./setup.sh --only agents --force
+
+# Re-deploy tools and skills only
+./setup.sh --only tools,skills --force
 ```
 
-Agent deployment also requires the associated workflow tools to be registered.
-If deploying agents in isolation, ensure workflows have been deployed first:
-
-```bash
-./setup.sh --only workflows,agents
-```
+The deploy order matters: workflows must exist before tools (tools need the live
+workflow UUID), and skills must exist before agents (agents reference skill IDs).
+The full `make setup` handles this automatically.
 
 See the project [README](../../README.md) and [AGENTS.md](../../AGENTS.md) for
 full setup instructions, and the [workflows README](../workflows/README.md) for
 details on the workflow tools each agent uses.
+
+## Skills
+
+Skills are defined in [`../skills/`](../skills/). Each skill has:
+
+- `id` — matches the `skill_ids` entry in the agent JSON
+- `name` / `description` — used by the LLM for skill routing
+- `content` — Markdown document with the full domain mandate
+- `tool_ids` — tools available within this skill's scope
+
+| Skill file | Agent | Content |
+| ---- | ----- | ------- |
+| `adsb-briefing-analyst-skill.json` | `adsb_daily_briefing_agent` | Briefing format mandate (all 11 sections, counting rules, Slack mrkdwn) |
+| `adsb-tracking-specialist-skill.json` | `adsb_agent` | Field reference, aircraft/airport/defunct tool guidance, report formats |
+| `adsb-hijack-assessment-skill.json` | `adsb_hijack_assessment_agent` | Squawk 7500 triage runbook, evaluation criteria, confidence scoring |
+
+## Tools
+
+Workflow tools are defined in [`../tools/`](../tools/). Each tool JSON has:
+
+- `id` — matches the `tool_ids` entry in agent/skill JSON
+- `type: "workflow"` — all tools are workflow bindings
+- `description` — the LLM's routing signal (scenario-oriented)
+- `tags` — for discoverability
+- `configuration.workflow_id` — placeholder replaced at deploy time with live UUID
+
+| Tool file | Workflow bound |
+| ---- | -------------- |
+| `adsb-aggregate-stats.json` | ADS-B Aggregate Stats |
+| `adsb-aircraft-history.json` | ADS-B Aircraft History Report |
+| `adsb-airport-activity.json` | ADS-B Airport Activity Report |
+| `adsb-defunct-callsign-detector.json` | Defunct Callsign Detector |
+| `hijack-cases-summary.json` | Hijack Cases Summary |
+| `squawk-7500-enrich.json` | Squawk 7500 Enrich |
+| `squawk-7500-create-case.json` | Squawk 7500 Create Case |

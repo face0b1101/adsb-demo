@@ -1,0 +1,9 @@
+{
+  "id": "hijack-cases-summary",
+  "type": "workflow",
+  "description": "Fetches squawk 7500 (hijack) investigation cases from Kibana case management, tagged with AI triage assessments (triage:genuine or triage:false_positive). Use when the user asks about hijack investigation outcomes, case summaries, or squawk 7500 triage results from the last 24 hours.",
+  "tags": ["adsb", "hijack", "squawk-7500", "cases"],
+  "configuration": {
+    "workflow_id": "__HIJACK_CASES_SUMMARY_WF_ID__"
+  }
+}

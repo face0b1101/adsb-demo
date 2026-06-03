@@ -24,10 +24,12 @@ ______________________________________________________________________
 | `make deploy-kibana`         | Deploy Kibana saved objects (dashboards, data views) only                |
 | `make deploy-cases`          | Deploy case configuration (custom fields, templates)                     |
 | `make deploy-workflows`      | Deploy Kibana workflows only                                             |
+| `make deploy-tools`          | Deploy Agent Builder workflow tools only                                 |
+| `make deploy-skills`         | Deploy Agent Builder skills only                                         |
 | `make deploy-agents`         | Deploy Kibana AI agents only                                             |
 | `make deploy-demouser`       | Deploy demo user roles and users only                                    |
 | `make deploy-es`             | Deploy all ES resources (ilm + indices + enrich + pipelines)             |
-| `make deploy-ai`             | Deploy AI layer (workflows + agents)                                     |
+| `make deploy-ai`             | Deploy AI layer (workflows + tools + skills + agents)                    |
 | `make redeploy`              | Re-deploy all resources (force overwrite)                                |
 | `make up`                    | Start Logstash (all 4 pipelines)                                         |
 | `make down`                  | Stop Logstash                                                            |

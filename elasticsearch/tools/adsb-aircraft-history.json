@@ -1,0 +1,9 @@
+{
+  "id": "adsb-aircraft-history",
+  "type": "workflow",
+  "description": "Fetches the flight history for a specific aircraft by ICAO24 address over a configurable lookback period (default 24h, max 30 days). Returns flight itinerary, airports visited, countries overflown, altitude and speed stats, emergency squawk codes, airframe details from adsbdb, live position from adsb.lol, and related Kibana investigation cases. Use when the user asks about a specific aircraft's history, movements, or route.",
+  "tags": ["adsb", "aircraft", "history", "tracking"],
+  "configuration": {
+    "workflow_id": "__ADSB_AIRCRAFT_HISTORY_WF_ID__"
+  }
+}

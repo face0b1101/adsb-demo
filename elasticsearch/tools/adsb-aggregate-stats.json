@@ -1,0 +1,9 @@
+{
+  "id": "adsb-aggregate-stats",
+  "type": "workflow",
+  "description": "Fetches 24-hour ADS-B aggregations: unique aircraft count, busiest airports (ranked by unique flights), top origin countries, airport zone activity breakdown (arriving/departing/taxiing/overflight), regional traffic by UN subregion and continent, ground vs airborne split, and emergency squawk counts (7500/7600/7700). Use when the user asks for the daily briefing, traffic statistics, or aggregated flight data.",
+  "tags": ["adsb", "aggregation", "briefing", "statistics"],
+  "configuration": {
+    "workflow_id": "__ADSB_AGGREGATE_STATS_WF_ID__"
+  }
+}
