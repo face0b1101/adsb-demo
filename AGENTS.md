@@ -147,6 +147,7 @@ ______________________________________________________________________
 ## Reference
 
 - **Development** (tech stack, Make targets, Docker access, conventions): [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)
+- **Dashboard management** (export, version tracking, redeploy): [`docs/dashboard-management.md`](docs/dashboard-management.md)
 - **Releasing** (version, tag, publish workflow): [`docs/RELEASING.md`](docs/RELEASING.md)
 - **Elastic Skills & MCP Servers** (skill categories, MCP usage, precedence): [`docs/elastic-skills-mcp.md`](docs/elastic-skills-mcp.md)
 - **Testing via API** (curl patterns for ES, workflows, agents): [`docs/testing-api.md`](docs/testing-api.md)

@@ -92,6 +92,7 @@ ______________________________________________________________________
 
 ## Related Reference
 
+- **Dashboard management** (export, version tracking, redeploy): [`dashboard-management.md`](dashboard-management.md)
 - **Elastic Skills & MCP Servers**: [`elastic-skills-mcp.md`](elastic-skills-mcp.md)
 - **Testing via API**: [`testing-api.md`](testing-api.md)
 - **Known Quirks**: [`known-quirks.md`](known-quirks.md)
