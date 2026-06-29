@@ -4,93 +4,96 @@
 
 ______________________________________________________________________
 
-## Tech Stack & Commands
+## Project Scope
 
-- **Runtime**: Docker & Docker Compose
-- **Data pipeline**: Logstash 9.x (four quadrant pipelines polling the OpenSky Network API)
-- **Search & storage**: Elasticsearch (time-series data stream with geo-shape enrichment)
-- **Visualisation**: Kibana (dashboards, data views)
-- **Setup automation**: Bash (`setup.sh`)
-
-| Command                      | Purpose                                                                  |
-| ---------------------------- | ------------------------------------------------------------------------ |
-| `cp .env.example .env`       | Create local environment config                                          |
-| `make setup`                 | Create ES indices, enrich policy, ingest pipeline, import Kibana objects |
-| `make setup-no-service-user` | Run full setup without service user (actions attributed to .env API key) |
-| `make deploy-ilm`            | Deploy ES ILM policy only (skipped on Serverless)                        |
-| `make deploy-indices`        | Deploy ES index templates and data streams only                          |
-| `make deploy-enrich`         | Deploy ES enrich policies only                                           |
-| `make deploy-pipelines`      | Deploy ES ingest pipelines only                                          |
-| `make deploy-kibana`         | Deploy Kibana saved objects (dashboards, data views) only                |
-| `make deploy-cases`          | Deploy case configuration (custom fields, templates)                     |
-| `make deploy-workflows`      | Deploy Kibana workflows only                                             |
-| `make deploy-tools`          | Deploy Agent Builder workflow tools only                                 |
-| `make deploy-skills`         | Deploy Agent Builder skills only                                         |
-| `make deploy-agents`         | Deploy Kibana AI agents only                                             |
-| `make deploy-demouser`       | Deploy demo user roles and users only                                    |
-| `make deploy-es`             | Deploy all ES resources (ilm + indices + enrich + pipelines)             |
-| `make deploy-ai`             | Deploy AI layer (workflows + tools + skills + agents)                    |
-| `make redeploy`              | Re-deploy all resources (force overwrite)                                |
-| `make up`                    | Start Logstash (all 4 pipelines)                                         |
-| `make down`                  | Stop Logstash                                                            |
-| `make logs`                  | Tail Logstash logs                                                       |
-| `make restart`               | Restart Logstash after config changes                                    |
-| `make status`                | Show Logstash pipeline status                                            |
-| `make clean`                 | Stop Logstash and remove volumes                                         |
-| `make validate`              | Validate Docker Compose config                                           |
-| `make health`                | Check Elasticsearch cluster health                                       |
-| `make ps`                    | Show running containers                                                  |
-| `make shell`                 | Open a shell inside the Logstash container                               |
-| `make help`                  | List all available targets (grouped)                                     |
-
-Any deploy target accepts `FORCE=1` to overwrite existing resources, e.g. `make deploy-agents FORCE=1`.
-
-**Key conventions**:
-
-- Never edit `.env` directly in commits; only reference `.env.example`.
-- Logstash pipeline configs live in `logstash/pipeline/`; Elasticsearch resources in `elasticsearch/`.
-- The four pipelines (`adsb_q1`–`adsb_q4`) are intentionally separate to spread load across quadrants.
+Live aircraft position tracking on the Elastic Stack. Logstash pipelines poll the
+[OpenSky Network](https://opensky-network.org) REST API for real-time ADS-B transponder
+data across four global quadrants, enrich each position with country/region geo-shapes and
+nearest-airport proximity, and index everything into an Elasticsearch data stream for
+visualisation in Kibana. An Agent Builder + Workflows layer adds AI agents, daily
+briefings, and automated hijack (squawk 7500) investigation. See the
+[README](README.md) for architecture and setup detail.
 
 ______________________________________________________________________
 
-## Elastic Skills & MCP Servers
+## At Startup
 
-See [docs/elastic-skills-mcp.md](docs/elastic-skills-mcp.md) — skill categories, MCP server usage, and precedence rules.
+This repository uses **beads (bd)** for issue tracking (`.beads/` is present). Before
+starting work, see [Issue Tracking](#beads-issue-tracker) at the foot of this file and run
+`bd prime` for the full workflow context.
 
 ______________________________________________________________________
 
-## Docker Access
+## Behavioural Guidelines
 
-This project relies on Docker for its Logstash service. AI assistants
-running in sandboxed environments (e.g. Cursor) often cannot reach the Docker
-daemon under default sandbox restrictions.
+Guidelines to reduce common LLM coding mistakes. These bias toward caution over speed;
+for trivial tasks, use judgement.
 
-**Always request elevated permissions for Docker commands.** Use
-`required_permissions: ["all"]` for any `docker` or `docker compose` command
-(including `docker ps`, `docker logs`, `docker stats`, `docker volume`,
-`docker inspect`, etc.). Read-only Docker queries still require the Docker
-socket, which the sandbox blocks.
+### 1. Think Before Coding
 
-```sh
-# Correct — works reliably
-Shell(command="docker ps", required_permissions=["all"])
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-# Wrong — will silently fail with empty output or exit code 1
-Shell(command="docker ps")
-Shell(command="docker ps", required_permissions=["full_network"])
+Before implementing:
+
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them; don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+### 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it; don't delete it.
+
+When your changes create orphans:
+
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: every changed line should trace directly to the user's request.
+
+### 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+
+```text
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
 ```
 
-______________________________________________________________________
+Strong success criteria let you loop independently. Weak criteria ("make it work")
+require constant clarification.
 
-## Testing via API
-
-See [docs/testing-api.md](docs/testing-api.md) — curl patterns for ES queries, workflows, agents, and side-effect awareness.
-
-______________________________________________________________________
-
-## Known Quirks
-
-See [docs/known-quirks.md](docs/known-quirks.md) — read before touching workflows, cases, ILM, or alert rules.
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites
+due to overcomplication, and clarifying questions come before implementation rather than
+after mistakes.
 
 ______________________________________________________________________
 
@@ -125,76 +128,31 @@ Concise policy reference for all coding agents touching this repository. Keep re
 - Never amend existing commits unless the user instructs you to.
 - Don't plaster all commits and git issues with "Made with Cursor", "Cursor helped me with this", "AI did everything" or anything similar.
 
-#### Releases
+### 5. Environment
 
-**Trigger:** When the user says **"release-ready"**, execute the full release procedure below without further prompting. Do not stop between steps or ask for confirmation unless a step fails.
+- **Docker commands require elevated permissions.** Every `docker` / `docker compose`
+  command (including read-only ones like `docker ps`) must use
+  `required_permissions: ["all"]`, or it silently fails under the sandbox. Full rationale
+  and examples: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#docker-access).
 
-**Prerequisites (validate before starting):**
-
-- `[Unreleased]` section in `CHANGELOG.md` is non-empty
-- Working tree is clean (`git status` shows no uncommitted changes apart from CHANGELOG/AGENTS.md)
-- Current branch is `main`
-
-**Procedure:**
-
-1. **Determine version** - read `CHANGELOG.md` `[Unreleased]` entries and the latest tag (`git tag --sort=-v:refname | head -1`). Infer the bump type from the changes:
-
-   - `### Added` sections or new features = minor bump
-   - `### Fixed` / `### Changed` only = patch bump
-   - Breaking changes or user-specified = major bump
-   - If ambiguous, ask the user once: "minor or patch?"
-
-2. **Update CHANGELOG** - rename `## [Unreleased]` content into `## [X.Y.Z] - YYYY-MM-DD` (today's date). Leave an empty `## [Unreleased]` section above it.
-
-3. **Update CHANGELOG footer links** - add the new version's compare link and update `[unreleased]` to point from the new tag to HEAD:
-
-   ```txt
-   [X.Y.Z]: https://github.com/face0b1101/adsb-demo/compare/vPREV...vX.Y.Z
-   [unreleased]: https://github.com/face0b1101/adsb-demo/compare/vX.Y.Z...HEAD
-   ```
-
-4. **Commit** - stage and commit:
-
-   ```bash
-   git add CHANGELOG.md
-   git commit -m "chore: release vX.Y.Z"
-   ```
-
-   Include any other files modified as part of the release (e.g. AGENTS.md), but do not stage unrelated work.
-
-5. **Tag** - create a signed annotated tag:
-
-   ```bash
-   SSH_AUTH_SOCK="$HOME/.bitwarden-ssh-agent.sock" \
-     git tag -s -a vX.Y.Z -m "<one-line summary from CHANGELOG>"
-   ```
-
-6. **Push** - push commit and tag:
-
-   ```bash
-   git push && git push origin vX.Y.Z
-   ```
-
-7. **GitHub Release** - create the release from the CHANGELOG notes:
-
-   ```bash
-   gh release create vX.Y.Z --title "vX.Y.Z - <title>" \
-     --notes "<notes from CHANGELOG>" --latest
-   ```
-
-8. **Verify** - run `git status` and confirm it shows "up to date with origin". Run `gh release view vX.Y.Z` to confirm the release exists.
-
-**Rules:**
-
-- Never leave a CHANGELOG version without a matching git tag and GitHub Release.
-- If any step fails, stop, report the error, and attempt to fix it before continuing.
-
-### 5. Pre-flight Checklist
+### 6. Pre-flight Checklist
 
 1. Read the task, confirm assumptions, and outline the approach.
 2. Inspect the relevant files (include imports/configs for context).
-3. After changes, verify Docker Compose config parses: `docker compose config --quiet`.
+3. After changes, run the [post-change checklist](docs/DEVELOPMENT.md#post-change-checklist).
 4. Summarise edits, mention tests, and flag follow-up work in the final response.
+
+______________________________________________________________________
+
+## Reference
+
+- **Development** (tech stack, Make targets, Docker access, conventions): [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)
+- **Releasing** (version, tag, publish workflow): [`docs/RELEASING.md`](docs/RELEASING.md)
+- **Elastic Skills & MCP Servers** (skill categories, MCP usage, precedence): [`docs/elastic-skills-mcp.md`](docs/elastic-skills-mcp.md)
+- **Testing via API** (curl patterns for ES, workflows, agents): [`docs/testing-api.md`](docs/testing-api.md)
+- **Known Quirks** (read before touching workflows, cases, ILM, alert rules): [`docs/known-quirks.md`](docs/known-quirks.md)
+
+______________________________________________________________________
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 

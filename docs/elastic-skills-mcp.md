@@ -33,6 +33,7 @@ a general web search for any Elastic-specific query.
 ## Precedence
 
 When sources overlap, prefer **project-specific conventions** in `AGENTS.md`
-(e.g. `ES_API_KEY_ENCODED`, `KB_BASE`, workflow YAML patterns), then
+and [`DEVELOPMENT.md`](DEVELOPMENT.md) (e.g. `ES_API_KEY_ENCODED`, `KB_BASE`,
+workflow YAML patterns), then
 **skills** for canonical API reference and best practices, then the **MCP docs
 server** for latest documentation lookups.

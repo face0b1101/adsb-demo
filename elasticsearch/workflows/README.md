@@ -506,8 +506,8 @@ full setup instructions.
 
 ## Workflow authoring tips
 
-Gotchas discovered during development. See also [Known Quirks](../../AGENTS.md#known-quirks)
-in AGENTS.md for the full list.
+Gotchas discovered during development. See also [Known Quirks](../../docs/known-quirks.md)
+for the full list.
 
 ### Indexing documents from step outputs
 
