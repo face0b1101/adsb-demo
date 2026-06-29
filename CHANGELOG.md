@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.2] - 2026-06-29
+
+### Changed
+
+- **Dashboard panels migrated to Lens and ES|QL** — Aircraft Detail and Aircraft World Overview dashboards re-exported from cluster after converting legacy metric visualisations and data tables to Lens (`lnsMetric`, `lnsTagcloud`, `lnsXY`, `lnsPie`, `lnsDatatable`) and ES|QL (`discover_session` for _Latest Events_); dashboard control groups now use Kibana 9.4 panel-based `CONTROL_GROUP` embeddables; orphaned _Emergency Situation Squawk Codes_ saved search removed from the bundle
+
 ## [1.11.1] - 2026-06-29
 
 ### Fixed
@@ -492,4 +498,5 @@ Kibana dashboards.
 [1.10.4]: https://github.com/face0b1101/adsb-demo/compare/v1.10.3...v1.10.4
 [1.11.0]: https://github.com/face0b1101/adsb-demo/compare/v1.10.4...v1.11.0
 [1.11.1]: https://github.com/face0b1101/adsb-demo/compare/v1.11.0...v1.11.1
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.1...HEAD
+[1.11.2]: https://github.com/face0b1101/adsb-demo/compare/v1.11.1...v1.11.2
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.2...HEAD
