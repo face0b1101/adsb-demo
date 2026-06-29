@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-06-29
+
 ### Fixed
 
 - **Dashboard saves failing on Kibana 9.4** — the Aircraft Detail and Aircraft World Overview dashboards could not be saved from the UI (blank `Dashboard '...' was not saved. Error:` toast). Kibana 9.4 routes saves through the new Dashboards API transforms layer, which rejected legacy panel drilldown config. Migrated all panel drilldowns in `elasticsearch/kibana/adsb-saved-objects.ndjson` from the legacy `drilldowns` array (orphaned `dashboardRefName`) to the modern `enhancements.dynamicActions` format with an explicit `config.dashboardId`, backfilled missing `dashboardId` on existing World Overview events, de-duplicated the World map panel (legacy + modern), removed the self-referencing (Detail → Detail) drilldowns on Aircraft Detail, and removed the dashboard drilldown from the World Overview "Emergency Situation Squawk Codes" saved-search panel (drilldowns on saved-search panels are not representable in the 9.4 Dashboards API schema and broke transform validation)
@@ -15,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Dashboard map default layer visibility** — Aircraft Detail map (`Aircraft Demo`) now shows `Dark Blue`, `Airports`, `Aircraft (ADS-B Data Top Hits)`, `Aircraft Tracks`, and `Aircraft Data Points` on load (Airspace off); Aircraft World Overview map shows `Dark Blue`, `Airports`, `Hexagons (medium)`, and `Possible Highjacking` on load (Airspace off)
 - **Aircraft World Overview access control removed** — dropped the `write_restricted` access control from the saved-object source so the dashboard is editable on fresh deployments (existing deployments retain the owner-set restriction until cleared by the owner)
+- **AGENTS.md slimmed** — moved tech stack, Make targets, Docker access, and releasing procedure to `docs/DEVELOPMENT.md` and `docs/RELEASING.md`; AGENTS.md now focuses on scope, behavioural guidelines, and agent operating rules
+- **Doc cross-links** — `docs/elastic-skills-mcp.md` and `elasticsearch/workflows/README.md` updated to reference `docs/known-quirks.md` and `docs/DEVELOPMENT.md`
 
 ## [1.11.0] - 2026-06-03
 
@@ -487,4 +491,5 @@ Kibana dashboards.
 [1.10.3]: https://github.com/face0b1101/adsb-demo/compare/v1.10.2...v1.10.3
 [1.10.4]: https://github.com/face0b1101/adsb-demo/compare/v1.10.3...v1.10.4
 [1.11.0]: https://github.com/face0b1101/adsb-demo/compare/v1.10.4...v1.11.0
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.0...HEAD
+[1.11.1]: https://github.com/face0b1101/adsb-demo/compare/v1.11.0...v1.11.1
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.1...HEAD
