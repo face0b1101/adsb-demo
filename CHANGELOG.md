@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.4] - 2026-06-29
+
+### Changed
+
+- **Records over Time visualisation updated** — re-exported Aircraft Detail and Aircraft World Overview dashboards from cluster; _Records over Time_ Lens XY panels now use compact number formatting on the record count series
+
 ## [1.11.3] - 2026-06-29
 
 ### Added
@@ -506,4 +512,5 @@ Kibana dashboards.
 [1.11.1]: https://github.com/face0b1101/adsb-demo/compare/v1.11.0...v1.11.1
 [1.11.2]: https://github.com/face0b1101/adsb-demo/compare/v1.11.1...v1.11.2
 [1.11.3]: https://github.com/face0b1101/adsb-demo/compare/v1.11.2...v1.11.3
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.3...HEAD
+[1.11.4]: https://github.com/face0b1101/adsb-demo/compare/v1.11.3...v1.11.4
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.4...HEAD
