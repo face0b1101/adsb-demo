@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dashboard saves failing on Kibana 9.4** — the Aircraft Detail and Aircraft World Overview dashboards could not be saved from the UI (blank `Dashboard '...' was not saved. Error:` toast). Kibana 9.4 routes saves through the new Dashboards API transforms layer, which rejected legacy panel drilldown config. Migrated all panel drilldowns in `elasticsearch/kibana/adsb-saved-objects.ndjson` from the legacy `drilldowns` array (orphaned `dashboardRefName`) to the modern `enhancements.dynamicActions` format with an explicit `config.dashboardId`, backfilled missing `dashboardId` on existing World Overview events, de-duplicated the World map panel (legacy + modern), and removed the self-referencing (Detail → Detail) drilldowns on Aircraft Detail that broke transform validation
+
+### Changed
+
+- **Dashboard map default layer visibility** — Aircraft Detail map (`Aircraft Demo`) now shows `Dark Blue`, `Airports`, `Aircraft (ADS-B Data Top Hits)`, `Aircraft Tracks`, and `Aircraft Data Points` on load (Airspace off); Aircraft World Overview map shows `Dark Blue`, `Airports`, `Hexagons (medium)`, and `Possible Highjacking` on load (Airspace off)
+- **Aircraft World Overview access control removed** — dropped the `write_restricted` access control from the saved-object source so the dashboard is editable on fresh deployments (existing deployments retain the owner-set restriction until cleared by the owner)
+
 ## [1.11.0] - 2026-06-03
 
 ### Changed
