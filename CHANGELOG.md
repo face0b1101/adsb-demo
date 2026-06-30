@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.5] - 2026-06-30
+
 ### Changed
 
 - **Kibana dashboards and maps re-exported** — Aircraft Detail and Aircraft World Overview dashboards, Aircraft Demo map (new _Airport Activity_ layer), and `demos-aircraft-adsb` data view field formatting updated from cluster UI edits
@@ -516,5 +518,6 @@ Kibana dashboards.
 [1.11.1]: https://github.com/face0b1101/adsb-demo/compare/v1.11.0...v1.11.1
 [1.11.2]: https://github.com/face0b1101/adsb-demo/compare/v1.11.1...v1.11.2
 [1.11.3]: https://github.com/face0b1101/adsb-demo/compare/v1.11.2...v1.11.3
+[1.11.5]: https://github.com/face0b1101/adsb-demo/compare/v1.11.4...v1.11.5
 [1.11.4]: https://github.com/face0b1101/adsb-demo/compare/v1.11.3...v1.11.4
-[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.4...HEAD
+[unreleased]: https://github.com/face0b1101/adsb-demo/compare/v1.11.5...HEAD
