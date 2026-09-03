@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - First triage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    @keyframes drawTop { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 26px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 46px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.1; max-width: 900px;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+
+    .steps { display: flex; gap: 20px; margin-top: 52px; }
+    .step { flex: 1 1 0; position: relative; padding-top: 26px; }
+    .step::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--accent); transform-origin: left; transform: scaleX(0);
+      animation: drawTop 0.4s ease forwards;
+    }
+    .step .n {
+      font-family: var(--numeric); font-size: 13px; font-weight: 700;
+      color: var(--accent); letter-spacing: 0.1em; opacity: 0;
+      animation: up 0.4s ease forwards;
+    }
+    .step h2 {
+      font-family: var(--display); font-size: 20px; font-weight: 700;
+      letter-spacing: -0.01em; margin: 12px 0 10px; opacity: 0;
+      animation: up 0.4s ease forwards;
+    }
+    .step p {
+      font-size: 14px; color: var(--muted); line-height: 1.55; opacity: 0;
+      animation: up 0.4s ease forwards;
+    }
+    .step:nth-child(1)::before { animation-delay: 0.40s; }
+    .step:nth-child(2)::before { animation-delay: 0.62s; }
+    .step:nth-child(3)::before { animation-delay: 0.84s; }
+    .step:nth-child(4)::before { animation-delay: 1.06s; }
+    .step:nth-child(5)::before { animation-delay: 1.28s; }
+    .step:nth-child(1) .n, .step:nth-child(1) h2, .step:nth-child(1) p { animation-delay: 0.50s; }
+    .step:nth-child(2) .n, .step:nth-child(2) h2, .step:nth-child(2) p { animation-delay: 0.72s; }
+    .step:nth-child(3) .n, .step:nth-child(3) h2, .step:nth-child(3) p { animation-delay: 0.94s; }
+    .step:nth-child(4) .n, .step:nth-child(4) h2, .step:nth-child(4) p { animation-delay: 1.16s; }
+    .step:nth-child(5) .n, .step:nth-child(5) h2, .step:nth-child(5) p { animation-delay: 1.38s; }
+
+    .foot {
+      margin-top: 46px; display: flex; align-items: baseline; gap: 18px;
+      opacity: 0; animation: up 0.5s ease forwards 1.60s;
+    }
+    .foot .t {
+      font-family: var(--numeric); font-size: 15px; font-weight: 700;
+      color: var(--accent-text); background: var(--accent);
+      border-radius: 999px; padding: 5px 14px;
+    }
+    .foot p { font-size: 17px; color: var(--muted); }
+    .foot p strong { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="kicker f1">Act</div>
+  <div class="rule"></div>
+  <h1 class="f2">The first hour of an investigation,<br>done <em>before you arrive</em>.</h1>
+
+  <div class="steps">
+    <div class="step">
+      <div class="n">01</div>
+      <h2>Detect</h2>
+      <p>The code appears and a rule fires within the minute. One alert per object, so nothing is buried.</p>
+    </div>
+    <div class="step">
+      <div class="n">02</div>
+      <h2>Check</h2>
+      <p>Is this object already being investigated? One incident stays one case, however many alerts arrive.</p>
+    </div>
+    <div class="step">
+      <div class="n">03</div>
+      <h2>Gather</h2>
+      <p>Recent movements, ownership, an independent position check, and any news reporting the same event.</p>
+    </div>
+    <div class="step">
+      <div class="n">04</div>
+      <h2>Assess</h2>
+      <p>An AI analyst weighs that evidence and says whether this looks genuine, with its reasoning attached.</p>
+    </div>
+    <div class="step">
+      <div class="n">05</div>
+      <h2>Hand over</h2>
+      <p>A case is opened with everything in it. Credible threats go to the duty channel; likely false alarms are marked.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="t">under 2 minutes</span>
+    <p>from transmission to a briefed case. <strong>No one had to be awake for it.</strong></p>
+  </div>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

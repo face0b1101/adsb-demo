@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Ask in English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; align-items: center; gap: 44px;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+    .f3 { opacity: 0; animation: up 0.5s ease forwards 0.40s; }
+
+    .col { flex: 0 0 404px; }
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 26px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 38px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.12;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+    .body { font-size: 19px; color: var(--muted); line-height: 1.6; margin-top: 22px; }
+    .body strong { color: var(--text); font-weight: 600; }
+
+    /* ---- panel ---- */
+    .panel {
+      flex: 0 0 636px; background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 8px; padding: 26px 28px 30px;
+      opacity: 0; animation: up 0.55s ease forwards 0.45s;
+    }
+    .panel-head {
+      display: flex; align-items: center; gap: 10px; padding-bottom: 18px;
+      border-bottom: 1px solid var(--rule); margin-bottom: 22px;
+    }
+    .panel-head .live { width: 7px; height: 7px; border-radius: 999px; background: var(--accent); }
+    .panel-head span {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .ask {
+      font-family: var(--display); font-size: 21px; font-weight: 700;
+      line-height: 1.35; letter-spacing: -0.01em; margin-bottom: 24px;
+    }
+    .ask::before { content: '“'; color: var(--accent); }
+    .ask::after { content: '”'; color: var(--accent); }
+    .answer { opacity: 0; animation: up 0.5s ease forwards 0.95s; }
+    .answer .who {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+    }
+    .answer p { font-size: 16px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+    .answer ul { list-style: none; margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .answer li { display: flex; gap: 11px; font-size: 15px; line-height: 1.5; color: var(--muted); }
+    .answer li b { color: var(--text); font-weight: 600; }
+    .answer li span.dot {
+      flex: 0 0 auto; width: 6px; height: 6px; border-radius: 999px;
+      background: var(--accent); margin-top: 7px;
+    }
+  </style>
+</head>
+<body>
+  <div class="col">
+    <div class="kicker f1">Explore</div>
+    <div class="rule"></div>
+    <h1 class="f2">No query language.<br>No <em>training course</em>.</h1>
+    <p class="body f3">An analyst asks in their own words and gets an answer drawn from the live
+      data, with the working shown. <strong>The people who understand the problem can now
+      interrogate the data themselves.</strong></p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="live"></div>
+      <span>Asked of the live data</span>
+    </div>
+    <p class="ask">What is over Scotland right now, and is anything behaving oddly?</p>
+
+    <div class="answer">
+      <div class="who">Answer</div>
+      <p>Forty-one aircraft are currently within Scottish airspace. Most are scheduled
+        traffic on the Glasgow and Edinburgh approaches. Three things are worth a look:</p>
+      <ul>
+        <li><span class="dot"></span><div><b>One aircraft holding</b> north-west of Glasgow for 26 minutes, well outside a normal pattern.</div></li>
+        <li><span class="dot"></span><div><b>Two low, slow tracks</b> over the Highlands with no filed operator.</div></li>
+        <li><span class="dot"></span><div><b>No emergency codes</b> currently being transmitted in this area.</div></li>
+      </ul>
+    </div>
+  </div>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

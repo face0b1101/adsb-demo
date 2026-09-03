@@ -1,0 +1,37 @@
+{
+  "cover.html": "- Thesis: the value is not the data, it is how fast a question becomes an answer and a signal becomes an action.\n- Set expectations: about twelve minutes of framing, then we drive the live system.\n- Say plainly: the feed is public aircraft data, and it stands in for whatever moves in their world.",
+
+  "problem.html": "- 17.2 million position reports in seven days, on one small demo. Nobody read them.\n- The bottleneck is attention and time to answer, not storage.\n- Ask the room: how long does it currently take to answer 'what was near this site last Tuesday'? Let the silence work.\n- Avoid volume bragging; the point is the gap between arrival and use.",
+
+  "analogue.html": "- Everything that follows is a position, a time and an identity. Aircraft are just the honest public example.\n- Name the domains that fit the people in the room: maritime, fleet, incidents, sensors.\n- ASK: which of these four is closest to your feed? Use their answer for the rest of the session.\n- Do not promise integrations here; the claim is about the pattern.",
+
+  "flow.html": "- Let the animation land before speaking; it draws five steps in about three seconds.\n- Walk it once: positions arrive, place is attached, a shared picture forms, people ask or get briefed, urgent signals go to triage.\n- This is the whole deck in one slide. Everything after it is a close-up on one hop.\n- Deliberately no product names, no plumbing. If asked how it ingests, say 'a scheduled pull from an API' and move on.",
+
+  "live-picture.html": "- This one is a schematic, not a screenshot. Say so if asked, then show the real thing in Kibana.\n- Teal is movement density, so busy areas summarise rather than smear. The thin lines are live tracks.\n- The pulsing marks are objects signalling an emergency, on the same canvas as everything else.\n- The value word is 'shared': one picture, so the room stops arguing about whose spreadsheet is right.\n- DEMO: Aircraft World Overview dashboard. Zoom the globe, then point out the emergency markers.",
+
+  "context.html": "- Left is what the object broadcasts. Right is what gets stored, every single time.\n- Country, region, nearest site and distance are attached on the way in, not looked up afterwards.\n- Payoff: questions can be asked in plain geography, so nobody needs coordinates or a GIS specialist.\n- If pressed on how: boundaries and site polygons are matched at ingest. Do not go deeper.",
+
+  "drill.html": "- Situational awareness is worthless if the detail lives in another system.\n- Three scales, same screen: everything, an area, one object.\n- Stress the audit angle: the trail from overview to underlying record stays intact, which matters for anything that ends up in a report or a court.\n- DEMO: click through from the world map to Aircraft Detail for a single aircraft.",
+
+  "explore.html": "- The question is typed in plain English. No query language, no ticket to a data team.\n- Read the three findings out; they are the kind of thing an analyst would want flagged.\n- Value line: the people who understand the problem can now interrogate the data themselves.\n- Governance question will come: answer that it runs under the same permissions as the user, and every answer cites its records.\n- DEMO: AI Agents, tracking specialist. Ask about a region the room cares about.",
+
+  "journey.html": "- SKIPPABLE if short of time; live-picture and triage carry the argument.\n- One question, thirty days, whole story: movements, ownership, current position, prior interest.\n- 'Prior interest' is the one to dwell on: has anyone in the organisation already looked at this? That is the question that usually cannot be answered today.\n- DEMO: ask the agent for an aircraft history report on a specific ICAO24.",
+
+  "site.html": "- SKIPPABLE if short of time.\n- Note the caption: the same question works for a port, depot, hospital or substation.\n- The hourly profile is the point. Once normal is visible, abnormal announces itself; no model required.\n- The '12 with no known operator' line is the investigative hook.\n- DEMO: ask the agent for airport activity around a named site.",
+
+  "briefing.html": "- Posted at 08:00 into the channel the team already reads. Nobody has to remember to run anything.\n- Written from the data each morning, not a fixed template with the numbers swapped.\n- It is also conversational: you can ask it follow-up questions in the same place.\n- DEMO: show yesterday's briefing in Slack, then ask the briefing agent to expand a section.",
+
+  "watchlist.html": "- SKIPPABLE if short of time.\n- Demo list is airlines that no longer exist. If a live aircraft still identifies as one, someone should know why.\n- Be honest about what a match is: a lead, not a verdict. Usually stale equipment or a reassigned identifier.\n- Then land the transfer: swap in vessels of interest, sanctioned operators, expired licences, plant reported stolen. The mechanism is unchanged.\n- Keep aviation trivia out of the room; it is a watch-list story.",
+
+  "signal.html": "- 7500 is the code for a hijack in progress. Say it once, plainly, and let it sit.\n- Counts are from seven days of live global data: 107, 93, 282.\n- The tension: rare enough to be ignored, serious enough that it never can be. Most are equipment or human error, and somebody still has to establish which.\n- DEMO: the emergency squawk panel on the World Overview dashboard.",
+
+  "triage.html": "- Walk the five steps once, no more: detect, check, gather, assess, hand over.\n- 'Check' is the unglamorous one that people recognise: one incident stays one case however many alerts arrive.\n- Under two minutes, and nobody had to be awake for it.\n- This is the slide that usually earns the follow-up meeting. Slow down here.\n- DEMO: open a real case created by the hijack investigation and scroll its attachments.",
+
+  "analyst.html": "- Read the verdict and the four reasons. Note it argues for a false alarm, and says so with moderate confidence.\n- Every line links back to the record it came from. No unsourced assertions.\n- The important sentence: it proposes, a person decides. Accountability and the record stay where they belong.\n- Expect the AI governance question here. Answer: no autonomous action, reasoning is recorded, a human closes the case.",
+
+  "your-data.html": "- Turn it round: what they bring, what they get.\n- 'Your definition of interesting' is the honest ask. That is the conversation we want, not a data dump.\n- Data residency line matters in this room: own tenancy, UK region, own network, or own hardware.\n- ASK: which of the four outcomes on the right would change a week in their operation?",
+
+  "recap.html": "- See, place, explore, act. Four jobs, one place.\n- Callback to the flow slide; do not re-explain the architecture.\n- Land the last line: no hand-offs between four tools, four copies of the data and four teams.\n- Keep this short. The room should be impatient for the demo by now.",
+
+  "close.html": "- Hand over to the live system. Everything shown is running now on public data.\n- Use the three 'bring' prompts to get a real question out of the room before opening Kibana.\n- If nobody bites, start with the emergency panel; the 7500 story always restarts the conversation.\n- Close with a concrete next step: a working session on one of their feeds."
+}

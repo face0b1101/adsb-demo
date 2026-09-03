@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Cover</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--brand); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--brand); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+    .f3 { opacity: 0; animation: up 0.5s ease forwards 0.40s; }
+    .f4 { opacity: 0; animation: up 0.5s ease forwards 0.55s; }
+
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: #FFFFFF; opacity: 0.85;
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 22px 0 30px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 68px; font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1.04; max-width: 940px;
+    }
+    .sub {
+      font-size: 24px; font-weight: 400; color: rgba(255, 255, 255, 0.82);
+      max-width: 720px; line-height: 1.55; margin-top: 26px;
+    }
+    .meta {
+      position: absolute; left: var(--pad-x); bottom: var(--pad-y);
+      display: flex; align-items: center; gap: 14px;
+      font-size: 14px; color: rgba(255, 255, 255, 0.7);
+    }
+    .dot { width: 4px; height: 4px; border-radius: 999px; background: rgba(255,255,255,0.5); }
+    .wordmark {
+      position: absolute; right: var(--pad-x); bottom: var(--pad-y);
+      font-family: var(--display); font-size: 18px; font-weight: 800;
+      letter-spacing: -0.01em; color: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="kicker f1">Live geospatial awareness</div>
+  <div class="rule"></div>
+  <h1 class="f2">See what is happening.<br>While it is still happening.</h1>
+  <p class="sub f3">A working demonstration built on live aircraft movements, and a pattern that
+    fits any feed of things that move.</p>
+
+  <div class="meta f4">
+    <span>UK public sector briefing</span>
+    <span class="dot"></span>
+    <span>Live demo follows</span>
+  </div>
+  <div class="wordmark f4">elastic</div>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

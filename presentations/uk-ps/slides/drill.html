@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Drill to one</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    @keyframes widen { from { opacity: 0; transform: scaleX(0.2); } to { opacity: 1; transform: none; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+    .f3 { opacity: 0; animation: up 0.5s ease forwards 0.40s; }
+
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 28px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 50px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.1; max-width: 900px;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+    .lede { font-size: 22px; color: var(--muted); line-height: 1.6; max-width: 780px; margin-top: 24px; }
+
+    .scale { display: flex; align-items: flex-end; gap: 20px; margin-top: 50px; }
+    .step {
+      background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
+      padding: 20px 22px; transform-origin: left; opacity: 0;
+      animation: widen 0.5s ease forwards;
+    }
+    .step:nth-child(1) { flex: 0 0 420px; animation-delay: 0.50s; }
+    .step:nth-child(2) { flex: 0 0 320px; animation-delay: 0.70s; }
+    .step:nth-child(3) { flex: 0 0 320px; animation-delay: 0.90s; border-color: var(--accent); }
+    .step .n {
+      font-family: var(--numeric); font-size: 12px; font-weight: 700;
+      color: var(--muted); letter-spacing: 0.1em;
+    }
+    .step h2 {
+      font-family: var(--display); font-size: 22px; font-weight: 700;
+      letter-spacing: -0.01em; margin: 10px 0 8px;
+    }
+    .step:nth-child(3) h2 { color: var(--accent); }
+    .step p { font-size: 15px; color: var(--muted); line-height: 1.5; }
+
+    .foot {
+      margin-top: 34px; font-size: 17px; color: var(--muted);
+      opacity: 0; animation: up 0.5s ease forwards 1.10s;
+    }
+    .foot strong { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="kicker f1">See, closer</div>
+  <div class="rule"></div>
+  <h1 class="f2">From everything,<br>to <em>one thing</em>, in two clicks.</h1>
+  <p class="lede f3">Situational awareness is not much use if getting to the detail means a
+    different system, a different team, and a wait.</p>
+
+  <div class="scale">
+    <div class="step">
+      <div class="n">01</div>
+      <h2>The whole picture</h2>
+      <p>Everything moving, summarised by density and by area.</p>
+    </div>
+    <div class="step">
+      <div class="n">02</div>
+      <h2>An area of interest</h2>
+      <p>Filter to a region, a country, or the ground around a site.</p>
+    </div>
+    <div class="step">
+      <div class="n">03</div>
+      <h2>One object</h2>
+      <p>Its full track, height and speed over time, and every reading behind it.</p>
+    </div>
+  </div>
+
+  <p class="foot">Same screen, same data, no export step. <strong>The trail from overview to
+    evidence stays intact.</strong></p>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

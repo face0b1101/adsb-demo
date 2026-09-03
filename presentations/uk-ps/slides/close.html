@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Over to the system</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--brand); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--brand); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+    .f3 { opacity: 0; animation: up 0.5s ease forwards 0.42s; }
+    .f4 { opacity: 0; animation: up 0.5s ease forwards 0.58s; }
+
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: #FFFFFF; opacity: 0.85;
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 22px 0 30px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 62px; font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1.05; max-width: 920px;
+    }
+    .sub {
+      font-size: 23px; color: rgba(255, 255, 255, 0.82); line-height: 1.55;
+      max-width: 700px; margin-top: 26px;
+    }
+    .asks-lead {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(255, 255, 255, 0.7);
+      margin-top: 46px; padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .asks { display: flex; gap: 46px; margin-top: 24px; }
+    .ask { max-width: 300px; }
+    .ask .n {
+      font-family: var(--numeric); font-size: 12px; font-weight: 700;
+      color: var(--accent); letter-spacing: 0.12em;
+    }
+    .ask p {
+      font-size: 17px; line-height: 1.5; margin-top: 10px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .wordmark {
+      position: absolute; right: var(--pad-x); bottom: var(--pad-y);
+      font-family: var(--display); font-size: 18px; font-weight: 800;
+      letter-spacing: -0.01em; color: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="kicker f1">Over to the live system</div>
+  <div class="rule"></div>
+  <h1 class="f2">Enough slides.<br>Let us go and look.</h1>
+  <p class="sub f3">Everything in this briefing is running now, on public data, and will answer
+    questions from the room.</p>
+
+  <div class="asks-lead f4">Bring to the demo</div>
+  <div class="asks f4">
+    <div class="ask">
+      <div class="n">01</div>
+      <p>A question about something that moves in your world.</p>
+    </div>
+    <div class="ask">
+      <div class="n">02</div>
+      <p>A list you already keep, and wish something was checking.</p>
+    </div>
+    <div class="ask">
+      <div class="n">03</div>
+      <p>The 3am phone call you would rather nobody had to make.</p>
+    </div>
+  </div>
+
+  <div class="wordmark f4">elastic</div>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

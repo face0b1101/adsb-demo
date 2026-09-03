@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Any moving thing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 28px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 50px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.1; max-width: 900px;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+    .lede { font-size: 21px; color: var(--muted); line-height: 1.55; max-width: 760px; margin-top: 22px; }
+
+    .grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+      margin-top: 44px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
+      padding: 24px 22px 26px; opacity: 0;
+    }
+    .card:nth-child(1) { animation: up 0.5s ease forwards 0.40s; }
+    .card:nth-child(2) { animation: up 0.5s ease forwards 0.52s; }
+    .card:nth-child(3) { animation: up 0.5s ease forwards 0.64s; }
+    .card:nth-child(4) { animation: up 0.5s ease forwards 0.76s; }
+    .card h2 {
+      font-family: var(--display); font-size: 19px; font-weight: 700;
+      letter-spacing: -0.01em; margin-bottom: 12px;
+    }
+    .card .bar { width: 40px; height: 3px; background: var(--accent); margin-bottom: 16px; }
+    .card p { font-size: 15px; color: var(--muted); line-height: 1.5; }
+
+    .foot {
+      margin-top: 34px; font-size: 17px; color: var(--muted);
+      opacity: 0; animation: up 0.5s ease forwards 0.90s;
+    }
+    .foot strong { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="kicker f1">The same shape of problem</div>
+  <div class="rule"></div>
+  <h1 class="f2">Today it is aircraft.<br>Tomorrow it is <em>whatever you track</em>.</h1>
+  <p class="lede f2">Every example in this demonstration is a position, a time, and an identity.
+    Change the feed and the capability is unchanged.</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="bar"></div>
+      <h2>Maritime</h2>
+      <p>Vessel reporting, fishing activity, small-boat activity, port approaches.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h2>Land and fleet</h2>
+      <p>Blue-light and patrol vehicles, freight, plant, high-value cargo.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h2>People and cases</h2>
+      <p>Incidents, calls for service, border crossings, inspections.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h2>Sensors and estate</h2>
+      <p>Environmental monitoring, utilities telemetry, asset condition.</p>
+    </div>
+  </div>
+
+  <p class="foot">Aircraft simply make a very honest demonstration: <strong>public, global, and
+    genuinely live.</strong></p>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

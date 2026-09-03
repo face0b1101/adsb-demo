@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Morning briefing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; align-items: center; gap: 44px;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+    .f3 { opacity: 0; animation: up 0.5s ease forwards 0.40s; }
+
+    .col { flex: 0 0 372px; }
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 26px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 40px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.12;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+    .body { font-size: 19px; color: var(--muted); line-height: 1.6; margin-top: 22px; }
+    .body strong { color: var(--text); font-weight: 600; }
+
+    .card {
+      flex: 0 0 668px; background: var(--surface); border: 1px solid var(--rule);
+      border-radius: 8px; overflow: hidden;
+      opacity: 0; animation: up 0.55s ease forwards 0.45s;
+    }
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 26px; border-bottom: 1px solid var(--rule);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .card-head .ch {
+      font-family: var(--numeric); font-size: 13px; font-weight: 700; color: var(--muted);
+    }
+    .card-head .at {
+      font-family: var(--numeric); font-size: 13px; font-weight: 700; color: var(--accent);
+    }
+    .card-body { padding: 26px 26px 28px; }
+    .card-body h2 {
+      font-family: var(--display); font-size: 24px; font-weight: 700;
+      letter-spacing: -0.01em; margin-bottom: 20px;
+    }
+    .lines { display: flex; flex-direction: column; gap: 14px; }
+    .line {
+      display: flex; gap: 14px; align-items: baseline; font-size: 16px; line-height: 1.5;
+      opacity: 0; animation: up 0.4s ease forwards;
+    }
+    .line:nth-child(1) { animation-delay: 0.80s; }
+    .line:nth-child(2) { animation-delay: 0.92s; }
+    .line:nth-child(3) { animation-delay: 1.04s; }
+    .line:nth-child(4) { animation-delay: 1.16s; }
+    .line:nth-child(5) { animation-delay: 1.28s; }
+    .line .num {
+      flex: 0 0 96px; font-family: var(--numeric); font-size: 17px; font-weight: 700;
+      color: var(--accent); text-align: right;
+    }
+    .line .txt { color: rgba(255, 255, 255, 0.85); }
+    .card-foot {
+      margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--rule);
+      font-size: 13px; color: var(--muted);
+      opacity: 0; animation: up 0.4s ease forwards 1.42s;
+    }
+  </style>
+</head>
+<body>
+  <div class="col">
+    <div class="kicker f1">Explore, unprompted</div>
+    <div class="rule"></div>
+    <h1 class="f2">The overnight<br>picture, already<br><em>written up</em>.</h1>
+    <p class="body f3">At eight each morning the last twenty-four hours are summarised and posted
+      to the channel the team already reads. <strong>Nobody has to remember to run
+      anything.</strong></p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="ch">#ops-briefing</span>
+      <span class="at">08:00 Europe/London</span>
+    </div>
+    <div class="card-body">
+      <h2>Daily movement briefing</h2>
+      <div class="lines">
+        <div class="line"><span class="num">104,552</span><span class="txt">distinct objects seen in the last 24 hours</span></div>
+        <div class="line"><span class="num">Heathrow</span><span class="txt">busiest site, ahead of Frankfurt and Schiphol</span></div>
+        <div class="line"><span class="num">3</span><span class="txt">emergency codes transmitted, all resolved overnight</span></div>
+        <div class="line"><span class="num">17</span><span class="txt">watch-list matches worth a second look</span></div>
+        <div class="line"><span class="num">2</span><span class="txt">investigations still open from yesterday</span></div>
+      </div>
+      <p class="card-foot">Written from the data, not from a template. Ask it follow-up questions in
+        the same place.</p>
+    </div>
+  </div>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

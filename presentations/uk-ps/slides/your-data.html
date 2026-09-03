@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Your data</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 26px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 46px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.1; max-width: 880px;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+
+    .split { display: flex; gap: 48px; margin-top: 44px; align-items: stretch; }
+    .side { flex: 1 1 0; }
+    .vr { flex: 0 0 1px; background: var(--rule); }
+    .side h2 {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 20px;
+    }
+    .side.get h2 { color: var(--accent); }
+    ul { list-style: none; display: flex; flex-direction: column; gap: 15px; }
+    li { display: flex; gap: 13px; font-size: 17px; line-height: 1.5; }
+    li b { font-weight: 600; }
+    li .d {
+      flex: 0 0 auto; width: 7px; height: 7px; border-radius: 999px;
+      background: var(--accent); margin-top: 8px;
+    }
+    li .sub { display: block; font-size: 14px; color: var(--muted); margin-top: 3px; }
+    .side.bring li .d { background: var(--rule); border: 1px solid var(--muted); }
+    .side.bring, .side.get { opacity: 0; animation: up 0.5s ease forwards; }
+    .side.bring { animation-delay: 0.42s; }
+    .vr { opacity: 0; animation: up 0.5s ease forwards 0.42s; }
+    .side.get { animation-delay: 0.60s; }
+
+    .foot {
+      margin-top: 38px; font-size: 17px; color: var(--muted); line-height: 1.55;
+      max-width: 960px; opacity: 0; animation: up 0.5s ease forwards 0.80s;
+    }
+    .foot strong { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="kicker f1">Take it home</div>
+  <div class="rule"></div>
+  <h1 class="f2">Nothing here is about aircraft.<br>It is about <em>your</em> feed.</h1>
+
+  <div class="split">
+    <div class="side bring">
+      <h2>What you bring</h2>
+      <ul>
+        <li><span class="d"></span><div><b>A feed of things that move</b><span class="sub">Anything with an identity, a position and a time. However often it arrives.</span></div></li>
+        <li><span class="d"></span><div><b>The reference data you already own</b><span class="sub">Sites, boundaries, assets, operators, lists of interest.</span></div></li>
+        <li><span class="d"></span><div><b>Your definition of interesting</b><span class="sub">The handful of conditions that should always wake someone up.</span></div></li>
+      </ul>
+    </div>
+
+    <div class="vr"></div>
+
+    <div class="side get">
+      <h2>What you get</h2>
+      <ul>
+        <li><span class="d"></span><div><b>A shared live picture</b><span class="sub">One map and timeline for the whole operation.</span></div></li>
+        <li><span class="d"></span><div><b>Self-service answers</b><span class="sub">The people with the questions stop queueing for the people with the query language.</span></div></li>
+        <li><span class="d"></span><div><b>A briefing every morning</b><span class="sub">Written from yesterday, waiting where the team already works.</span></div></li>
+        <li><span class="d"></span><div><b>Triage that starts itself</b><span class="sub">Evidence gathered and an opinion offered before the first phone call.</span></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="foot">Runs where your data is allowed to live: your own tenancy, a UK region, your
+    network, or your own hardware. <strong>The pattern does not care; your obligations do.</strong></p>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

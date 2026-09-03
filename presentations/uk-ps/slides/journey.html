@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Where it has been</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    @keyframes track { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes pop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+    .f3 { opacity: 0; animation: up 0.5s ease forwards 0.40s; }
+
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 26px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 46px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.1; max-width: 860px;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+    .lede { font-size: 20px; color: var(--muted); line-height: 1.6; max-width: 800px; margin-top: 20px; }
+
+    /* ---- timeline ---- */
+    .timeline { position: relative; width: 1100px; margin-top: 54px; height: 96px; }
+    .line {
+      position: absolute; top: 44px; left: 95px; width: 910px; height: 2px;
+      background: var(--rule);
+    }
+    .line-fill {
+      position: absolute; top: 44px; left: 95px; width: 910px; height: 2px;
+      background: var(--accent); transform-origin: left; transform: scaleX(0);
+      animation: track 1.1s ease forwards 0.55s;
+    }
+    .stop { position: absolute; top: 0; width: 190px; margin-left: -95px; text-align: center; }
+    .stop .when {
+      font-family: var(--numeric); font-size: 12px; font-weight: 700;
+      color: var(--muted); letter-spacing: 0.06em;
+    }
+    .stop .mark {
+      width: 12px; height: 12px; border-radius: 999px; background: var(--accent);
+      margin: 20px auto 0; opacity: 0; animation: pop 0.35s ease forwards;
+    }
+    .stop .where {
+      margin-top: 18px; font-size: 16px; font-weight: 600; line-height: 1.3;
+    }
+    .s1 { left: 95px; }
+    .s2 { left: 322px; }
+    .s3 { left: 550px; }
+    .s4 { left: 778px; }
+    .s5 { left: 1005px; }
+    .s1 .mark { animation-delay: 0.60s; }
+    .s2 .mark { animation-delay: 0.85s; }
+    .s3 .mark { animation-delay: 1.10s; }
+    .s4 .mark { animation-delay: 1.35s; }
+    .s5 .mark { animation-delay: 1.60s; }
+
+    .assembled {
+      display: flex; gap: 46px; margin-top: 56px;
+      opacity: 0; animation: up 0.5s ease forwards 1.75s;
+    }
+    .item { flex: 1 1 0; }
+    .item .bar { width: 34px; height: 3px; background: var(--accent); margin-bottom: 12px; }
+    .item h2 { font-family: var(--display); font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .item p { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="kicker f1">Explore</div>
+  <div class="rule"></div>
+  <h1 class="f2">“Where has this one been<br>for the <em>last thirty days</em>?”</h1>
+  <p class="lede f3">One question produces the whole story: every movement, who the object belongs to,
+    where it is now, and whether anyone has looked at it before.</p>
+
+  <div class="timeline">
+    <div class="line"></div>
+    <div class="line-fill"></div>
+    <div class="stop s1"><div class="when">04 AUG</div><div class="mark"></div><div class="where">Casablanca</div></div>
+    <div class="stop s2"><div class="when">11 AUG</div><div class="mark"></div><div class="where">Istanbul</div></div>
+    <div class="stop s3"><div class="when">19 AUG</div><div class="mark"></div><div class="where">Tripoli</div></div>
+    <div class="stop s4"><div class="when">27 AUG</div><div class="mark"></div><div class="where">Malta</div></div>
+    <div class="stop s5"><div class="when">TODAY</div><div class="mark"></div><div class="where">Airborne, en route</div></div>
+  </div>
+
+  <div class="assembled">
+    <div class="item">
+      <div class="bar"></div>
+      <h2>Its own history</h2>
+      <p>Every route flown in the window, with the sites at each end.</p>
+    </div>
+    <div class="item">
+      <div class="bar"></div>
+      <h2>Who it belongs to</h2>
+      <p>Registration, type and operator, pulled from public registers.</p>
+    </div>
+    <div class="item">
+      <div class="bar"></div>
+      <h2>Where it is now</h2>
+      <p>Current position confirmed against an independent source.</p>
+    </div>
+    <div class="item">
+      <div class="bar"></div>
+      <h2>Prior interest</h2>
+      <p>Any case already opened on this object, by anyone in the team.</p>
+    </div>
+  </div>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

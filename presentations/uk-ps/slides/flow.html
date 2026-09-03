@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Picture to action</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    @keyframes nodeIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes travel {
+      0%   { opacity: 0; left: 0; }
+      15%  { opacity: 1; }
+      85%  { opacity: 1; }
+      100% { opacity: 0; left: 100%; }
+    }
+
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 26px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 46px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.1; max-width: 860px;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+
+    /* ---- flow ---- */
+    .flow {
+      display: flex; align-items: stretch; justify-content: space-between;
+      margin-top: 46px; width: 1100px;
+    }
+    .node {
+      flex: 0 0 184px; background: var(--surface);
+      border: 1px solid var(--rule); border-radius: 8px;
+      padding: 18px 16px 20px; opacity: 0;
+      animation: nodeIn 0.45s ease forwards;
+    }
+    .node .chip {
+      display: inline-block; font-family: var(--numeric); font-size: 12px;
+      font-weight: 700; color: var(--accent-text); background: var(--accent);
+      border-radius: 999px; padding: 3px 9px; margin-bottom: 14px;
+    }
+    .node h2 {
+      font-family: var(--display); font-size: 17px; font-weight: 700;
+      line-height: 1.25; letter-spacing: -0.01em; margin-bottom: 10px;
+    }
+    .node p { font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+    .edge {
+      flex: 0 0 44px; align-self: center; position: relative;
+      height: 3px; background: var(--rule);
+    }
+    .edge::before {
+      content: ''; position: absolute; inset: 0; background: var(--accent);
+      transform: scaleX(0); transform-origin: left;
+      animation: fill 0.38s ease forwards;
+    }
+    .edge::after {
+      content: ''; position: absolute; top: -3px; width: 9px; height: 9px;
+      margin-left: -4px; border-radius: 999px; background: var(--accent);
+      opacity: 0; animation: travel 0.42s ease forwards;
+    }
+
+    .n1 { animation-delay: 0.20s; }
+    .n2 { animation-delay: 0.80s; }
+    .n3 { animation-delay: 1.40s; }
+    .n4 { animation-delay: 2.00s; }
+    .n5 { animation-delay: 2.60s; }
+    .e1, .e1::before, .e1::after { animation-delay: 0.58s; }
+    .e2, .e2::before, .e2::after { animation-delay: 1.18s; }
+    .e3, .e3::before, .e3::after { animation-delay: 1.78s; }
+    .e4, .e4::before, .e4::after { animation-delay: 2.38s; }
+
+    .foot {
+      margin-top: 40px; font-size: 17px; color: var(--muted);
+      opacity: 0; animation: up 0.5s ease forwards 3.05s;
+    }
+    .foot strong { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="kicker f1">Picture to action</div>
+  <div class="rule"></div>
+  <h1 class="f2">Five steps between a transmission<br>and <em>someone doing something</em>.</h1>
+
+  <div class="flow">
+    <div class="node n1">
+      <span class="chip">01</span>
+      <h2>Live positions arrive</h2>
+      <p>A continuous public feed, taken in as it is broadcast.</p>
+    </div>
+    <div class="edge e1"></div>
+
+    <div class="node n2">
+      <span class="chip">02</span>
+      <h2>Every point gets a place</h2>
+      <p>Country, region and nearest known site, added on the way in.</p>
+    </div>
+    <div class="edge e2"></div>
+
+    <div class="node n3">
+      <span class="chip">03</span>
+      <h2>Common operating picture</h2>
+      <p>One map and one timeline the whole room can look at.</p>
+    </div>
+    <div class="edge e3"></div>
+
+    <div class="node n4">
+      <span class="chip">04</span>
+      <h2>Ask, or be briefed</h2>
+      <p>Plain-English questions, plus a summary waiting each morning.</p>
+    </div>
+    <div class="edge e4"></div>
+
+    <div class="node n5">
+      <span class="chip">05</span>
+      <h2>Signal to first triage</h2>
+      <p>An emergency code opens a case with the background gathered.</p>
+    </div>
+  </div>
+
+  <p class="foot">Four jobs, in order: <strong>see, place, explore, act.</strong>
+    The rest of this briefing walks the same line.</p>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

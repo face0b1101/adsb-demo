@@ -1,0 +1,14 @@
+{
+  "name": "adsb-uk-ps-deck",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "serve": "fslides serve",
+    "build": "fslides build",
+    "pdf": "fslides pdf",
+    "export": "fslides export"
+  },
+  "devDependencies": {
+    "fslides": "^0.6.0"
+  }
+}

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Analyst time</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; align-items: center; gap: 46px;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+    .f3 { opacity: 0; animation: up 0.5s ease forwards 0.40s; }
+
+    .card {
+      flex: 0 0 640px; background: var(--surface); border: 1px solid var(--rule);
+      border-radius: 8px; padding: 28px 30px 30px;
+      opacity: 0; animation: up 0.55s ease forwards 0.20s;
+    }
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 18px; border-bottom: 1px solid var(--rule); margin-bottom: 22px;
+    }
+    .card-head .who {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .card-head .ref { font-family: var(--numeric); font-size: 13px; font-weight: 700; color: var(--muted); }
+    .verdict {
+      font-family: var(--display); font-size: 30px; font-weight: 800;
+      letter-spacing: -0.02em; color: var(--accent); line-height: 1.15;
+    }
+    .conf {
+      display: inline-block; font-family: var(--numeric); font-size: 12px; font-weight: 700;
+      color: var(--accent-text); background: var(--accent); border-radius: 999px;
+      padding: 4px 11px; margin-top: 14px;
+    }
+    .because {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--muted); margin: 26px 0 14px;
+    }
+    ul { list-style: none; display: flex; flex-direction: column; gap: 11px; }
+    li { display: flex; gap: 12px; font-size: 15px; line-height: 1.5; color: rgba(255,255,255,0.85); }
+    li span.dot {
+      flex: 0 0 auto; width: 6px; height: 6px; border-radius: 999px;
+      background: var(--accent); margin-top: 7px;
+    }
+    .rec {
+      margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--rule);
+      font-size: 15px; color: var(--muted);
+    }
+    .rec strong { color: var(--text); font-weight: 600; }
+
+    .col { flex: 0 0 398px; }
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule-line {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 26px; opacity: 0; animation: grow 0.5s ease forwards 0.40s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 40px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.1;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+    .body { font-size: 18px; color: var(--muted); line-height: 1.6; margin-top: 22px; }
+    .body strong { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-head">
+      <span class="who">First assessment</span>
+      <span class="ref">CASE-2481 · 02:14</span>
+    </div>
+    <div class="verdict">Probably a false alarm</div>
+    <span class="conf">moderate confidence</span>
+
+    <p class="because">On the evidence that</p>
+    <ul>
+      <li><span class="dot"></span><div>An independent source does not show the emergency code being transmitted</div></li>
+      <li><span class="dot"></span><div>The aircraft is on its scheduled route at normal height and speed</div></li>
+      <li><span class="dot"></span><div>No reporting from the region mentions an incident</div></li>
+      <li><span class="dot"></span><div>The same aircraft produced two identical signals last month</div></li>
+    </ul>
+
+    <p class="rec"><strong>Recommendation:</strong> record and keep watching. Do not escalate.
+      Every line above links back to the record it came from.</p>
+  </div>
+
+  <div class="col">
+    <div class="kicker f2">Act, with judgement</div>
+    <div class="rule-line"></div>
+    <h1 class="f3">It proposes.<br><em>A person</em> decides.</h1>
+    <p class="body f3">The value is not an automated verdict. It is that the tedious part, gathering
+      and comparing, is finished before a human looks. <strong>The decision, the accountability
+      and the record stay exactly where they belong.</strong></p>
+  </div>
+
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

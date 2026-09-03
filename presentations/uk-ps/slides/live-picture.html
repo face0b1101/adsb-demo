@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UK public sector - Live picture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1C1E23;
+      --surface: #252830;
+      --text: #FFFFFF;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #48EFCF;
+      --accent-text: #0A2E28;
+      --brand: #0B64DD;
+      --rule: rgba(255, 255, 255, 0.10);
+      --alert: #FF957D;
+      --display: 'Inter', sans-serif;
+      --body: 'Inter', sans-serif;
+      --numeric: 'Space Mono', monospace;
+      --pad-x: 90px;
+      --pad-y: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body {
+      width: 1280px; height: 720px; overflow: hidden; position: absolute;
+      font-family: var(--body); background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 var(--pad-x); -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: absolute; left: 0; top: 0; z-index: 2;
+      width: 5px; height: 720px; background: var(--brand);
+    }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes grow { from { opacity: 0; width: 0; } to { opacity: 1; width: 64px; } }
+    .f1 { opacity: 0; animation: up 0.5s ease forwards 0.10s; }
+    .f2 { opacity: 0; animation: up 0.5s ease forwards 0.25s; }
+    .f3 { opacity: 0; animation: up 0.5s ease forwards 0.40s; }
+
+    /* ---- content, clear of the globe ---- */
+    .col { position: relative; z-index: 1; max-width: 470px; }
+    .kicker {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .rule {
+      height: 3px; width: 64px; background: var(--accent);
+      margin: 20px 0 26px; opacity: 0; animation: grow 0.5s ease forwards 0.25s;
+    }
+    h1 {
+      font-family: var(--display); font-size: 44px; font-weight: 800;
+      letter-spacing: -0.02em; line-height: 1.08;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+    .body { font-size: 19px; color: var(--muted); line-height: 1.6; margin-top: 22px; }
+
+    .points { margin-top: 26px; display: flex; flex-direction: column; gap: 13px; }
+    .point { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; line-height: 1.45; }
+    .point span.dot {
+      flex: 0 0 auto; width: 7px; height: 7px; border-radius: 999px;
+      background: var(--accent); margin-top: 7px;
+    }
+
+    .legend {
+      display: flex; flex-direction: column; gap: 10px; margin-top: 32px;
+      opacity: 0; animation: up 0.5s ease forwards 2.90s;
+    }
+    .key { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+    .key .sw { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 999px; background: var(--accent); }
+    .key .sw.alert { background: var(--alert); }
+    .key .sw.line { width: 20px; height: 2px; border-radius: 0; }
+
+    /* ---- the globe: full-height, offset right, cropped by the right edge ---- */
+    .stage {
+      position: absolute; left: 0; top: 0; width: 1280px; height: 720px;
+      z-index: 0; pointer-events: none;
+    }
+    .stage svg { display: block; width: 1280px; height: 720px; }
+
+    .disc { fill: #171A1F; }
+    .rim { fill: none; stroke: rgba(255, 255, 255, 0.16); stroke-width: 1.5; }
+
+    .grat { fill: none; stroke: rgba(255, 255, 255, 0.085); stroke-width: 1.1; }
+    .grat > * {
+      stroke-dasharray: 2400; stroke-dashoffset: 2400;
+      animation: draw 1.9s ease forwards 0.45s;
+    }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    .cell {
+      fill: var(--accent); opacity: 0;
+      transform-box: fill-box; transform-origin: center;
+      animation: cellIn 0.5s ease forwards;
+    }
+    @keyframes cellIn {
+      from { opacity: 0; transform: scale(0.25); }
+      to   { opacity: var(--o); transform: scale(1); }
+    }
+
+    .track {
+      fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0.45;
+      stroke-linecap: round;
+      stroke-dasharray: 100; stroke-dashoffset: 100;
+      animation: draw 1.6s ease forwards;
+    }
+    .t1 { animation-delay: 1.50s; }
+    .t2 { animation-delay: 1.80s; }
+    .t3 { animation-delay: 2.10s; }
+
+    /* a mover running each track, continuously */
+    .spark { fill: var(--accent); offset-distance: 0%; opacity: 0; }
+    @keyframes fly {
+      0%   { offset-distance: 0%;   opacity: 0; }
+      8%   { opacity: 1; }
+      92%  { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
+    }
+    .s1 {
+      offset-path: path('M 647 281 Q 820 145 1093 202');
+      animation: fly 8s linear infinite 2.8s;
+    }
+    .s2 {
+      offset-path: path('M 676 504 Q 928 432 1165 338');
+      animation: fly 10s linear infinite 3.3s;
+    }
+    .s3 {
+      offset-path: path('M 841 166 Q 1057 331 1136 532');
+      animation: fly 9s linear infinite 3.8s;
+    }
+
+    /* emergency signals: the only thing that keeps moving */
+    .pip { opacity: 0; animation: up 0.4s ease forwards; }
+    .pip .core { fill: var(--alert); }
+    .pip .halo {
+      fill: none; stroke: var(--alert); stroke-width: 1.8;
+      transform-box: fill-box; transform-origin: center;
+      animation: ping 2.6s ease-out infinite;
+    }
+    @keyframes ping {
+      0%   { transform: scale(0.6); opacity: 0.85; }
+      70%  { opacity: 0; }
+      100% { transform: scale(4.2); opacity: 0; }
+    }
+    .g1 { animation-delay: 2.40s; }
+    .g2 { animation-delay: 2.60s; }
+    .g3 { animation-delay: 2.80s; }
+    .g1 .halo { animation-delay: 2.40s; }
+    .g2 .halo { animation-delay: 3.20s; }
+    .g3 .halo { animation-delay: 3.90s; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <svg viewBox="0 0 1280 720" role="img"
+         aria-label="A globe showing movement density, live tracks and three flagged emergency signals">
+      <defs>
+        <clipPath id="globeClip"><circle cx="985" cy="360" r="352"/></clipPath>
+      </defs>
+
+      <circle class="disc" cx="985" cy="360" r="352"/>
+
+      <g class="grat" clip-path="url(#globeClip)">
+        <ellipse cx="985" cy="116" rx="253.7" ry="45"/>
+        <ellipse cx="985" cy="238" rx="330.2" ry="58"/>
+        <ellipse cx="985" cy="360" rx="352"   ry="62"/>
+        <ellipse cx="985" cy="482" rx="330.2" ry="58"/>
+        <ellipse cx="985" cy="604" rx="253.7" ry="45"/>
+        <ellipse cx="985" cy="360" rx="249" ry="352"/>
+        <ellipse cx="985" cy="360" rx="124" ry="352"/>
+        <ellipse cx="985" cy="360" rx="31"  ry="352"/>
+      </g>
+
+      <g id="field" clip-path="url(#globeClip)"></g>
+
+      <g clip-path="url(#globeClip)">
+        <path class="track t1" pathLength="100" d="M 647 281 Q 820 145 1093 202"/>
+        <path class="track t2" pathLength="100" d="M 676 504 Q 928 432 1165 338"/>
+        <path class="track t3" pathLength="100" d="M 841 166 Q 1057 331 1136 532"/>
+        <circle class="spark s1" cx="0" cy="0" r="4"/>
+        <circle class="spark s2" cx="0" cy="0" r="4"/>
+        <circle class="spark s3" cx="0" cy="0" r="4"/>
+      </g>
+
+      <g class="pip g1">
+        <circle class="halo" cx="816" cy="256" r="7"/>
+        <circle class="core" cx="816" cy="256" r="4.6"/>
+      </g>
+      <g class="pip g2">
+        <circle class="halo" cx="928" cy="231" r="7"/>
+        <circle class="core" cx="928" cy="231" r="4.6"/>
+      </g>
+      <g class="pip g3">
+        <circle class="halo" cx="1025" cy="317" r="7"/>
+        <circle class="core" cx="1025" cy="317" r="4.6"/>
+      </g>
+
+      <circle class="rim" cx="985" cy="360" r="352"/>
+    </svg>
+  </div>
+
+  <div class="col">
+    <div class="kicker f1">See</div>
+    <div class="rule"></div>
+    <h1 class="f2">One picture,<br><em>everyone</em> the same.</h1>
+    <p class="body f2">Thousands of moving objects at once, drawn where they actually are, with
+      the density that matters brought forward.</p>
+    <div class="points f3">
+      <div class="point"><span class="dot"></span><div>Busy areas summarise themselves instead of becoming a blur</div></div>
+      <div class="point"><span class="dot"></span><div>Known sites and boundaries sit underneath as reference</div></div>
+      <div class="point"><span class="dot"></span><div>Anything urgent is marked on the same canvas</div></div>
+    </div>
+    <div class="legend">
+      <div class="key"><span class="sw"></span>Movement density</div>
+      <div class="key"><span class="sw line"></span>Live track</div>
+      <div class="key"><span class="sw alert"></span>Emergency signal</div>
+    </div>
+  </div>
+
+<script>
+// Density field. Seeded so the picture is identical on every showing.
+(function field() {
+  var svgNS = 'http://www.w3.org/2000/svg';
+  var g = document.getElementById('field');
+  var CX = 985, CY = 360, R = 345;
+  var seed = 20260903;
+  function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+
+  var clusters = [
+    { x: 748,  y: 267, n: 90, sp: 119 },  // western Europe
+    { x: 920,  y: 220, n: 80, sp: 126 },  // northern Asia
+    { x: 1107, y: 317, n: 50, sp: 108 },  // eastern Asia
+    { x: 791,  y: 439, n: 55, sp: 119 },  // Atlantic approaches
+    { x: 963,  y: 504, n: 40, sp: 115 },  // Indian Ocean
+    { x: 963,  y: 374, n: 70, sp: 302 }   // sparse global scatter
+  ];
+
+  var i = 0;
+  clusters.forEach(function (c) {
+    for (var k = 0; k < c.n; k++) {
+      // two samples pull points toward the cluster centre
+      var dx = (rnd() + rnd() - 1) * c.sp;
+      var dy = (rnd() + rnd() - 1) * c.sp * 0.72;
+      var x = c.x + dx, y = c.y + dy;
+      var fromCentre = Math.sqrt((x - CX) * (x - CX) + (y - CY) * (y - CY));
+      if (fromCentre > R) continue;
+
+      var tight = 1 - Math.min(1, Math.sqrt(dx * dx + dy * dy) / c.sp);
+      var edge = 1 - fromCentre / R;                       // fade toward the limb
+      var o = (0.14 + tight * 0.40) * (0.45 + edge * 0.55);
+
+      var el = document.createElementNS(svgNS, 'circle');
+      el.setAttribute('class', 'cell');
+      el.setAttribute('cx', x.toFixed(1));
+      el.setAttribute('cy', y.toFixed(1));
+      el.setAttribute('r', (3 + tight * 2.4).toFixed(2));
+      el.style.setProperty('--o', o.toFixed(3));
+      el.style.animationDelay = (0.55 + i * 0.004).toFixed(3) + 's';
+      g.appendChild(el);
+      i++;
+    }
+  });
+})();
+</script>
+<script src="/js/fuckslides.js"></script>
+<script>
+(function scaleToFit() {
+  if (window !== window.top) return;
+  const W = 1280, H = 720;
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    document.body.style.transform = 'scale(' + s + ')';
+    document.body.style.transformOrigin = '0 0';
+    document.body.style.left = ((window.innerWidth - W * s) / 2) + 'px';
+    document.body.style.top = ((window.innerHeight - H * s) / 2) + 'px';
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>
